@@ -29,6 +29,9 @@
 }
 
 html, body, #root { height: 100%; }
+/* Increase base font size to scale typography site-wide while keeping layout the same.
+  This updates rem units across the project. Tweak percentage to increase/decrease. */
+html { font-size: 135%; }
 body {
   margin: 0;
   background:
@@ -59,11 +62,11 @@ body {
   .container.analyse-page { width: 95vw; }
 }
 .site-header { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, rgba(139,92,246,0.10), rgba(0,0,0,0)); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); padding: 0.9rem 0; }
-.brand { font-weight: 800; letter-spacing: 0.3px; color: var(--text-0); font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; font-size: 1.45rem; }
+.brand { display: block; width: 100%; text-align: center; margin: 0; font-weight: 800; letter-spacing: 0.3px; color: var(--text-0); font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; font-size: 1.9rem; }
 .site-main { flex: 1; display: flex; align-items: flex-start; justify-content: center; }
 .hero { text-align: center; padding: 12.4rem 1rem 3.5rem; }
 .hero-title { font-size: 4rem; line-height: 1.05; margin: 0 0 0.5rem; font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; font-weight: 700; letter-spacing: -0.5px; /* gradient text */ background: linear-gradient(90deg, var(--purple-400), var(--blue-600)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 6px 20px rgba(17,12,34,0.45); }
-.subtitle { color: #7c7c82; margin: 1 auto 3.5rem; max-width: 680px; font-size: 1.3rem;}
+.subtitle { color: #7c7c82; margin: 1rem auto 3.5rem; max-width: 680px; font-size: 1.3rem; text-align: center; }
 
 .cards-grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: 9rem; justify-items: center; align-items: center; max-width: 860px; margin: 9.25rem auto 0; }
 .card { background: linear-gradient(180deg, rgba(139,92,246,0.06), rgba(0,0,0,0)); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; color: var(--text-0); transition: transform 120ms ease, border-color 150ms ease, background 150ms ease; width: 100%; max-width: 380px; aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; overflow: hidden; }
@@ -92,11 +95,11 @@ body {
 }
 .coming-soon-card h2 { font-size: 2.2rem; margin: 0 0 0.6rem; }
 .coming-soon-card p { color: var(--muted); font-size: 1.05rem; margin: 0 0 1rem; }
-.btn-primary { background: linear-gradient(90deg, var(--purple-400), var(--blue-600)); color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; }
+.btn-primary { background: linear-gradient(90deg, var(--purple-400), var(--blue-600)); color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 1rem; font-family: inherit; line-height: 1.2; }
 .btn-primary:active { transform: translateY(1px); }
 
 /* Secondary button */
-.btn-secondary { background: transparent; color: var(--text-0); border: 1px solid var(--line); padding: 0.55rem 0.9rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-secondary { background: transparent; color: var(--text-0); border: 1px solid var(--line); padding: 0.55rem 0.9rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; font-family: inherit; line-height: 1.2; }
 .btn-secondary:hover { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.35); }
 .btn-secondary:active { transform: translateY(1px); }
 
@@ -186,6 +189,31 @@ body {
   overflow: hidden;
 }
 .portfolio-card .portfolio-table { border-radius: 8px; border: none; background: transparent; }
+
+/* News Summary section styles */
+.news-summary { margin-top: 7.8rem; }
+.news-summary .news-title { font-size: 2.25rem; margin: 0 0 0.8rem 0; }
+.news-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+
+@media (max-width: 760px) {
+  .news-list { grid-template-columns: 1fr; }
+}
+.news-row { padding: 0.9rem; border-radius: 8px; background: rgba(255,255,255,0.065); border: 1px solid rgba(255,255,255,0.085); }
+.news-row-header { margin-bottom: 0.45rem; }
+.news-ticker {margin-left: 0.6rem; color: var(--purple-300); font-weight: 700; }
+.news-paragraph { margin: 0; color: var(--text-1); line-height: 1.5; }
+
+/* Sentiment tag */
+.sentiment-tag { margin-left: 0rem; padding: 0.18rem 0.5rem; border-radius: 999px; font-weight: 700; font-size: 0.78rem; }
+.sentiment-tag.positive { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.15); }
+.sentiment-tag.neutral { background: rgba(156,163,175,0.07); color: #9ca3af; border: 1px solid rgba(156,163,175,0.08); }
+.sentiment-tag.negative { background: rgba(239,68,68,0.08); color: #ef4444; border: 1px solid rgba(239,68,68,0.1); }
+
+/* Filter buttons */
+.news-controls { display: flex; justify-content: flex-start; margin-bottom: 0.8rem; }
+.news-filters { display: inline-flex; gap: 0.5rem; }
+.filter-btn { background: transparent; color: var(--text-0); border: 1px solid rgba(255,255,255,0.03); padding: 0.45rem 0.7rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.filter-btn.active { background: linear-gradient(90deg, var(--purple-400), var(--blue-600)); color: white; border-color: rgba(124,58,237,0.6); box-shadow: 0 6px 18px rgba(37,99,235,0.06); }
 
 /* Optional page boundary: add `with-boundary` to `.analyse-page` to give the page a
   subtle card/border and inner padding. This creates the margin/boundary you requested.
