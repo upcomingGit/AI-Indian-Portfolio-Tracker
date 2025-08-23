@@ -1,13 +1,17 @@
 import './App.css'
 import { useEffect, useState } from 'react'
+import AnalysePage from './pages/AnalysePage'
 
 function App() {
-  const initialRoute = window.location.pathname === '/coming-soon' ? 'coming-soon' : 'home'
+  const initialRoute = window.location.pathname === '/coming-soon' ? 'coming-soon' : window.location.pathname === '/analyse' ? 'analyse' : 'home'
   const [route, setRoute] = useState(initialRoute)
 
   useEffect(() => {
     const onPop = () => {
-      setRoute(window.location.pathname === '/coming-soon' ? 'coming-soon' : 'home')
+      const p = window.location.pathname
+      if (p === '/coming-soon') setRoute('coming-soon')
+      else if (p === '/analyse') setRoute('analyse')
+      else setRoute('home')
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
@@ -16,6 +20,8 @@ function App() {
   const navigateTo = (r) => {
     if (r === 'coming-soon') {
       window.history.pushState({}, '', '/coming-soon')
+    } else if (r === 'analyse') {
+      window.history.pushState({}, '', '/analyse')
     } else {
       window.history.pushState({}, '', '/')
     }
@@ -63,8 +69,15 @@ function App() {
                 </div>
               </div>
 
-              {/* Card 2 */}
-              <div className="card feature-card">
+              {/* Card 2 - navigates to Analyse */}
+              <div
+                className="card feature-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigateTo('analyse')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { navigateTo('analyse') } }}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="icon-container">
                   <div className="icon-wrap">
                     {/* Bell icon */}
@@ -87,13 +100,15 @@ function App() {
           <div className="container hero">
             <div className="coming-soon-card">
               <h2>Coming Soon!</h2>
-              <p>This capability is coming soon. We'll notify you when it's available.</p>
+              <p>This capability is coming soon. We'll notify you when it's available!</p>
               <div style={{ marginTop: '1.2rem' }}>
                 <button className="btn-primary" onClick={() => navigateTo('home')}>Return to Home</button>
               </div>
             </div>
           </div>
         )}
+
+        {route === 'analyse' && <AnalysePage onBack={() => navigateTo('home')} />}
       </main>
 
       {/* Footer */}

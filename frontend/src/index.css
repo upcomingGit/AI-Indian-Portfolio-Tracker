@@ -82,6 +82,72 @@ body {
 .btn-primary { background: linear-gradient(90deg, var(--purple-400), var(--blue-600)); color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; }
 .btn-primary:active { transform: translateY(1px); }
 
+/* Secondary button */
+.btn-secondary { background: transparent; color: var(--text-0); border: 1px solid var(--line); padding: 0.55rem 0.9rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-secondary:hover { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.35); }
+.btn-secondary:active { transform: translateY(1px); }
+
+/* Analyse page */
+.analyse-page { padding-top: 4rem; }
+.analyse-header { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; text-align: center; }
+.analyse-title { font-size: 2rem; margin: 0; align-items: center; }
+.analyse-actions { display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-left: 0; }
+
+/* Centered hero card before connect */
+.analyse-center { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 140px); }
+/* Square, centered hero card */
+.analyse-hero-card {
+  width: min(420px, 92vw);
+  /* auto height to fit content; smaller, more proportional card */
+  padding: 1.25rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(139,92,246,0.06), rgba(0,0,0,0));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.analyse-hero-card .analyse-header { margin-bottom: 0.6rem; }
+.analyse-hero-card .analyse-title { text-align: center; }
+.analyse-hero-card .analyse-subtitle { margin: 0.75rem 0 0; text-align: center; font-size: 0.98rem; line-height: 1.45; }
+
+/* When showing the hero before connect, stack the action buttons below the subtitle and center them */
+.analyse-actions-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem; /* increased gap between the two buttons */
+  align-items: center;
+  margin-top: 2rem; /* larger space between subtitle and buttons */
+}
+.analyse-actions-vertical .btn-primary { width: min(320px, 100%); }
+
+/* Use same primary styling for Return to Home when promoted to primary */
+.btn-primary { box-shadow: 0 6px 18px rgba(37,99,235,0.06); }
+
+/* Full-width portfolio table presentation */
+.portfolio-table-full { margin: 1.2rem 0 0; overflow-x: auto; }
+.portfolio-table { width: 100%; border-collapse: collapse; }
+.portfolio-table thead th { text-align: left; padding: 0.75rem 1rem; background: rgba(139,92,246,0.12); color: var(--text-0); font-weight: 700; }
+.portfolio-table tbody td { padding: 0.7rem 1rem; border-top: 1px solid var(--line); color: var(--text-0); }
+.portfolio-table tbody tr:nth-child(odd) { background: rgba(255,255,255,0.02); }
+.portfolio-table tbody tr:hover { background: rgba(37,99,235,0.10); }
+.portfolio-table td[data-col="P/L"],
+.portfolio-table td[data-col="P/L %"] { font-weight: 700; }
+.portfolio-table td { white-space: nowrap; }
+
+/* Portfolio table styles */
+.portfolio-table-wrap { margin: 1.5rem auto 0; max-width: 860px; overflow-x: auto; }
+.portfolio-table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); background: rgba(255,255,255,0.02); border-radius: 10px; overflow: hidden; }
+.portfolio-table thead th { text-align: left; padding: 0.75rem 1rem; background: rgba(139,92,246,0.12); color: var(--text-0); font-weight: 700; }
+.portfolio-table tbody td { padding: 0.7rem 1rem; border-top: 1px solid var(--line); color: var(--text-0); }
+.portfolio-table tbody tr:nth-child(odd) { background: rgba(255,255,255,0.02); }
+.portfolio-table tbody tr:hover { background: rgba(37,99,235,0.10); }
+.portfolio-table td[data-col="P/L"],
+.portfolio-table td[data-col="P/L %"] { font-weight: 700; }
+.portfolio-table td { white-space: nowrap; }
+
 /* Responsive */
 @media (max-width: 760px) {
   .hero { padding: 3rem 1rem; }
