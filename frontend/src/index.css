@@ -1,0 +1,90 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap');
+.card-text-container {
+  font-size: 1rem; /* reduced so text fits within card */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0 0.6rem; /* safe horizontal padding to keep text away from edges */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  margin: 0;
+}
+
+/* Theme base inspired by provided reference (dark/grey/purple/blue) */
+:root {
+  --bg-0: #0b0b12; /* near-black */
+  --bg-1: #0f1020; /* deep purple-black */
+  --bg-2: #13132a; /* card */
+  --line: #232343;
+  --text-0: #eef0ff;
+  --text-1: #cfd3ff;
+  --muted: #9aa0cf;
+  --purple-300: #a78bfa;
+  --purple-400: #8b5cf6;
+  --purple-500: #7c3aed;
+  --purple-600: #6d28d9;
+  --blue-600: #2563eb;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 800px at 80% -200px, rgba(139,92,246,0.12), transparent 60%),
+    radial-gradient(1000px 600px at -200px 100%, rgba(124,58,237,0.10), transparent 60%),
+    var(--bg-0);
+  color: var(--text-0);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Layout */
+.page { display: flex; flex-direction: column; min-height: 100%; }
+.container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+.site-header { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, rgba(139,92,246,0.10), rgba(0,0,0,0)); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); padding: 0.9rem 0; }
+.brand { font-weight: 800; letter-spacing: 0.3px; color: var(--text-0); font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; font-size: 1.45rem; }
+.site-main { flex: 1; display: flex; align-items: flex-start; justify-content: center; }
+.hero { text-align: center; padding: 12.4rem 1rem 3.5rem; }
+.hero-title { font-size: 4rem; line-height: 1.05; margin: 0 0 0.5rem; font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; font-weight: 700; letter-spacing: -0.5px; /* gradient text */ background: linear-gradient(90deg, var(--purple-400), var(--blue-600)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 6px 20px rgba(17,12,34,0.45); }
+.subtitle { color: #7c7c82; margin: 1 auto 3.5rem; max-width: 680px; font-size: 1.3rem;}
+
+.cards-grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: 9rem; justify-items: center; align-items: center; max-width: 860px; margin: 9.25rem auto 0; }
+.card { background: linear-gradient(180deg, rgba(139,92,246,0.06), rgba(0,0,0,0)); border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem; color: var(--text-0); transition: transform 120ms ease, border-color 150ms ease, background 150ms ease; width: 100%; max-width: 380px; aspect-ratio: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; overflow: hidden; }
+.card:hover { transform: translateY(-2px); border-color: #2b2b55; }
+.feature-card h3 { margin: 1.1rem 0 0.4rem; font-size: 1.05rem; text-align: center; font-weight: 700; letter-spacing: 0.02em; display: block; word-break: break-word; white-space: normal; max-width: 100%; overflow-wrap: break-word; }
+.feature-card .muted { color: var(--muted); margin: 0; text-align: center; font-size: 0.95rem; line-height: 1.4; font-weight: 500; letter-spacing: 0.01em; display: block; word-break: break-word; white-space: normal; max-width: 100%; overflow-wrap: break-word; }
+
+.card .icon-wrap { margin-bottom: 0.75rem; }
+
+.icon-wrap { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.02); color: var(--purple-300); box-shadow: inset 0 0 12px rgba(167,139,250,0.1); }
+.icon-wrap svg { width: 34px; height: 34px; }
+
+.site-footer { border-top: 1px solid var(--line); background: linear-gradient(0deg, rgba(139,92,246,0.10), rgba(0,0,0,0)); }
+.site-footer small { color: var(--text-1); display: block; text-align: center; padding: 0.9rem 0; font-size: 1.48rem; }
+
+/* Coming Soon page styles */
+.coming-soon-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 640px;
+  margin: 6rem auto;
+  text-align: center;
+  color: var(--text-0);
+}
+.coming-soon-card h2 { font-size: 2.2rem; margin: 0 0 0.6rem; }
+.coming-soon-card p { color: var(--muted); font-size: 1.05rem; margin: 0 0 1rem; }
+.btn-primary { background: linear-gradient(90deg, var(--purple-400), var(--blue-600)); color: white; border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; }
+.btn-primary:active { transform: translateY(1px); }
+
+/* Responsive */
+@media (max-width: 760px) {
+  .hero { padding: 3rem 1rem; }
+  .hero-title { font-size: 2rem; }
+  .cards-grid { grid-template-columns: 1fr; }
+}
