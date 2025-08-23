@@ -52,17 +52,17 @@ export default function AnalysePage({ onBack }) {
 
   // Connected: move header to top (below site header), hide subtitle, show table full-width
   return (
-    <div className="container analyse-page">
+  <div className="container analyse-page">
       <div className="analyse-header">
         <h2 className="analyse-title">Analyse your portfolio</h2>
         <div className="analyse-actions">
-          <button className="btn-primary" onClick={onBack}>Return to Home</button>
           <button className="btn-primary" onClick={handleConnect} disabled={loading}>
-            {loading ? 'Loading…' : 'Connect your Zerodha Portfolio'}
+            {loading ? 'Loading…' : 'Refresh your Zerodha Portfolio'}
           </button>
+          <button className="btn-primary" onClick={onBack}>Return to Home</button>          
         </div>
       </div>
-      <div className="portfolio-table-full" dangerouslySetInnerHTML={{ __html: tableHtml }} />
+  <div className="portfolio-table-full portfolio-card" dangerouslySetInnerHTML={{ __html: tableHtml }} />
     </div>
   )
 }

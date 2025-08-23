@@ -45,6 +45,19 @@ body {
 /* Layout */
 .page { display: flex; flex-direction: column; min-height: 100%; }
 .container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+
+/* Wider container specifically for the Analyse page so heading, actions and table
+   align to a 70% viewport boundary. Use on the element that has both classes
+   `container analyse-page` (current markup uses that). */
+.container.analyse-page {
+  max-width: none;
+  width: 70vw;
+}
+
+/* On smaller screens, fall back to a near-full-width container for usability */
+@media (max-width: 900px) {
+  .container.analyse-page { width: 95vw; }
+}
 .site-header { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, rgba(139,92,246,0.10), rgba(0,0,0,0)); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); padding: 0.9rem 0; }
 .brand { font-weight: 800; letter-spacing: 0.3px; color: var(--text-0); font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; font-size: 1.45rem; }
 .site-main { flex: 1; display: flex; align-items: flex-start; justify-content: center; }
@@ -92,6 +105,11 @@ body {
 .analyse-header { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; text-align: center; }
 .analyse-title { font-size: 2rem; margin: 0; align-items: center; }
 .analyse-actions { display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-left: 0; }
+
+/* Connected view: align title to left, actions to right and inline with header within the container */
+.analyse-page .analyse-header { flex-direction: row; align-items: center; justify-content: space-between; text-align: left; gap: 1rem; width: 100%; }
+.analyse-page .analyse-title { margin: 0; text-align: left; }
+.analyse-page .analyse-actions { justify-content: flex-end; width: auto; }
 
 /* Centered hero card before connect */
 .analyse-center { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 140px); }
@@ -147,6 +165,33 @@ body {
 .portfolio-table td[data-col="P/L"],
 .portfolio-table td[data-col="P/L %"] { font-weight: 700; }
 .portfolio-table td { white-space: nowrap; }
+
+/* Default: keep portfolio table inside the page container and aligned with header/actions */
+.analyse-page .portfolio-table-full { width: 100%; max-width: 100%; margin: 6.5rem 0 0; padding: 0; box-sizing: border-box; }
+.analyse-page .portfolio-table { font-size: 1.05rem; }
+.analyse-page .portfolio-table thead th, .analyse-page .portfolio-table tbody td { padding: 0.9rem 1.1rem; }
+
+/* Optional visual card wrapper around the table. Use by adding the class
+  `portfolio-card` to the table wrapper (`<div class="portfolio-table-full portfolio-card">`). */
+.portfolio-card {
+  /* Soft, subtle card (previously `.portfolio-card.alt`) */
+  width: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+  border: 1px solid rgba(255,255,255,0.02);
+  border-radius: 10px;
+  padding: 0.55rem;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.25);
+  backdrop-filter: blur(4px);
+  transition: box-shadow 120ms ease, transform 120ms ease;
+  overflow: hidden;
+}
+.portfolio-card .portfolio-table { border-radius: 8px; border: none; background: transparent; }
+
+/* Optional page boundary: add `with-boundary` to `.analyse-page` to give the page a
+  subtle card/border and inner padding. This creates the margin/boundary you requested.
+  Example: <div className="container analyse-page with-boundary"> ... */
+.analyse-page.with-boundary { border: 1px solid var(--line); border-radius: 12px; padding: 1rem; background: linear-gradient(180deg, rgba(139,92,246,0.02), rgba(0,0,0,0)); }
+.analyse-page.with-boundary .analyse-header { width: 100%; }
 
 /* Responsive */
 @media (max-width: 760px) {
