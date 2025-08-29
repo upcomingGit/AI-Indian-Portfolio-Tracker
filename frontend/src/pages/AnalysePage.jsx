@@ -1,6 +1,5 @@
 import { useState } from 'react'
-// MOCK DATA IMPORT: replace `mockMd` with a real API response or prop when integrating.
-// Example: import tableMarkdown from '../api/portfolioResponse'
+// MOCK DATA IMPORT (kept as fallback)
 import mockMd from '../mock/portfolioTable.md?raw'
 
 export default function AnalysePage({ onBack }) {
@@ -30,6 +29,21 @@ export default function AnalysePage({ onBack }) {
       return `<tr>${tds}</tr>`
     }).join('')
     const ths = headers.map(h => `<th>${h}</th>`).join('')
+    return `<table class=\"portfolio-table\"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`
+  }
+
+  // Helper: build simple HTML table from list of dict holdings
+  const holdingsToHtml = (items) => {
+    if (!Array.isArray(items) || items.length === 0) return ''
+    // collect headers across all items
+    const headersSet = new Set()
+    items.forEach(it => Object.keys(it || {}).forEach(k => headersSet.add(k)))
+    const headers = Array.from(headersSet)
+    const ths = headers.map(h => `<th>${h}</th>`).join('')
+    const trs = items.map((it, idx) => {
+      const tds = headers.map(h => `<td data-col=\"${h}\">${it?.[h] ?? ''}</td>`).join('')
+      return `<tr data-row=\"${idx}\">${tds}</tr>`
+    }).join('')
     return `<table class=\"portfolio-table\"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`
   }
 
@@ -102,27 +116,64 @@ export default function AnalysePage({ onBack }) {
   const handleConnect = async () => {
     try {
       setLoading(true)
-      // ------------------ MOCK: table HTML generation ------------------
-      // This line uses the local `mockMd` markdown to build the table HTML. Replace
-      // `mockMd` with your fetched markdown or HTML payload when integrating.
-      const html = parseMarkdownTableToHtml(mockMd)
+      // Step 1: ask backend for MCP login URL
+      try {
+        const loginRes = await fetch('/api/mcp/login')
+        if (loginRes.ok) {
+          const { login_url } = await loginRes.json()
+          if (login_url) {
+            // Open login URL in a new tab/window for the user to complete auth
+            window.open(login_url, '_blank', 'noopener,noreferrer')
+          }
+        }
+      } catch (_) {
+        // If backend not reachable, continue to fallback after holdings poll
+      }
+
+      // Step 2: poll holdings until available (short, simple loop)
+      let holdings = []
+      let attempts = 0
+      while (attempts < 5) {
+        attempts += 1
+        try {
+          const hRes = await fetch('/api/mcp/holdings')
+          if (hRes.ok) {
+            const data = await hRes.json()
+            holdings = Array.isArray(data?.holdings) ? data.holdings : []
+            if (holdings.length > 0) break
+          }
+        } catch {
+          // ignore and retry
+        }
+        await new Promise(r => setTimeout(r, 1500 * attempts))
+      }
+
+      // Fallback to mock if no holdings
+      if (!holdings || holdings.length === 0) {
+        const html = parseMarkdownTableToHtml(mockMd)
+        setTableHtml(html)
+        const lines = mockMd.trim().split(/\r?\n/).filter(Boolean)
+        const headerLine = lines[0] || ''
+        const rows = lines.slice(2)
+        const headers = headerLine.split('|').map(s => s.trim()).filter(Boolean)
+        let colIdx = headers.findIndex(h => /company/i.test(h))
+        if (colIdx === -1) colIdx = headers.findIndex(h => /ticker/i.test(h))
+        if (colIdx === -1) colIdx = 0
+        const companies = rows
+          .map(r => r.split('|').map(s => s.trim()).filter(Boolean)[colIdx] || '')
+          .filter(Boolean)
+        setTickers(companies)
+        await fetchNews(newsFilter, companies)
+        return
+      }
+
+      // Build table from real holdings
+      const html = holdingsToHtml(holdings)
       setTableHtml(html)
-      // ------------------ END MOCK: table HTML generation ------------------
-      // Derive company identifiers from the markdown table
-      // Prefer a column named "Company"; fallback to "Ticker"; else use first column
-      const lines = mockMd.trim().split(/\r?\n/).filter(Boolean)
-      const headerLine = lines[0] || ''
-      const rows = lines.slice(2)
-      const headers = headerLine.split('|').map(s => s.trim()).filter(Boolean)
-      let colIdx = headers.findIndex(h => /company/i.test(h))
-      if (colIdx === -1) colIdx = headers.findIndex(h => /ticker/i.test(h))
-      if (colIdx === -1) colIdx = 0
-      const companies = rows
-        .map(r => r.split('|').map(s => s.trim()).filter(Boolean)[colIdx] || '')
-        .filter(Boolean)
-      setTickers(companies)
-      // Initial fetch for default timeframe
-      await fetchNews(newsFilter, companies)
+      // Try to infer tickers/company codes from common fields
+      const candidates = holdings.map(h => h?.symbol || h?.tradingsymbol || h?.ticker || h?.Company || h?.company).filter(Boolean)
+      setTickers(candidates)
+      await fetchNews(newsFilter, candidates)
     } catch (e) {
       setTableHtml('<p style=\"color:#f99\">Failed to load mock data.</p>')
     } finally {
