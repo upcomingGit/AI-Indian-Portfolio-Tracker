@@ -1,1 +1,35 @@
 /* App-specific overrides intentionally minimal; global theme is in index.css */
+
+.news-loading-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(255,255,255,0.7);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	z-index: 2;
+}
+.news-spinner {
+	width: 32px;
+	height: 32px;
+	border: 4px solid #ccc;
+	border-top: 4px solid #007bff;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+	margin-bottom: 12px;
+}
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+.news-loading-text {
+	color: #333;
+	font-size: 1rem;
+	font-weight: 500;
+}
+
+/* Reverted custom news card styles to default (no overrides) */
