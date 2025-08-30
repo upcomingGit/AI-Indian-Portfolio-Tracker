@@ -1,27 +1,87 @@
 import './App.css'
 import { useEffect, useState } from 'react'
 import AnalysePage from './pages/AnalysePage'
+import CompanyDetailPage from './pages/CompanyDetailPage'
 
 function App() {
-  const initialRoute = window.location.pathname === '/coming-soon' ? 'coming-soon' : window.location.pathname === '/analyse' ? 'analyse' : 'home'
-  const [route, setRoute] = useState(initialRoute)
+  const [route, setRoute] = useState('home')
+  const [selectedCompany, setSelectedCompany] = useState(null)
+  const [portfolioLoaded, setPortfolioLoaded] = useState(() => {
+    // Check localStorage for persisted portfolio state
+    const saved = localStorage.getItem('portfolioLoaded')
+    return saved === 'true'
+  })
+  const [portfolioData, setPortfolioData] = useState(() => {
+    // Check localStorage for persisted portfolio data
+    const saved = localStorage.getItem('portfolioData')
+    try {
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      return null
+    }
+  })
+
+  // Save portfolio state to localStorage whenever it changes
+  const updatePortfolioLoaded = (loaded) => {
+    setPortfolioLoaded(loaded)
+    localStorage.setItem('portfolioLoaded', loaded.toString())
+    if (!loaded) {
+      localStorage.removeItem('portfolioData')
+    }
+  }
+
+  const updatePortfolioData = (data) => {
+    setPortfolioData(data)
+    if (data) {
+      localStorage.setItem('portfolioData', JSON.stringify(data))
+    } else {
+      localStorage.removeItem('portfolioData')
+    }
+  }
+
+  // Initialize route based on URL
+  useEffect(() => {
+    const path = window.location.pathname
+    if (path === '/coming-soon') {
+      setRoute('coming-soon')
+    } else if (path === '/analyse') {
+      setRoute('analyse')
+    } else if (path.startsWith('/company/')) {
+      const symbol = path.split('/company/')[1]
+      setSelectedCompany(symbol)
+      setRoute('company-detail')
+    } else {
+      setRoute('home')
+    }
+  }, [])
 
   useEffect(() => {
     const onPop = () => {
       const p = window.location.pathname
-      if (p === '/coming-soon') setRoute('coming-soon')
-      else if (p === '/analyse') setRoute('analyse')
-      else setRoute('home')
+      if (p === '/coming-soon') {
+        setRoute('coming-soon')
+      } else if (p === '/analyse') {
+        setRoute('analyse')
+      } else if (p.startsWith('/company/')) {
+        const symbol = p.split('/company/')[1]
+        setSelectedCompany(symbol)
+        setRoute('company-detail')
+      } else {
+        setRoute('home')
+      }
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
-  const navigateTo = (r) => {
+  const navigateTo = (r, symbol = null) => {
     if (r === 'coming-soon') {
       window.history.pushState({}, '', '/coming-soon')
     } else if (r === 'analyse') {
       window.history.pushState({}, '', '/analyse')
+    } else if (r === 'company-detail' && symbol) {
+      window.history.pushState({}, '', `/company/${symbol}`)
+      setSelectedCompany(symbol)
     } else {
       window.history.pushState({}, '', '/')
     }
@@ -108,7 +168,23 @@ function App() {
           </div>
         )}
 
-        {route === 'analyse' && <AnalysePage onBack={() => navigateTo('home')} />}
+        {route === 'analyse' && (
+          <AnalysePage 
+            onBack={() => navigateTo('home')} 
+            onCompanySelect={(symbol) => navigateTo('company-detail', symbol)}
+            portfolioLoaded={portfolioLoaded}
+            setPortfolioLoaded={updatePortfolioLoaded}
+            portfolioData={portfolioData}
+            setPortfolioData={updatePortfolioData}
+          />
+        )}
+
+        {route === 'company-detail' && selectedCompany && (
+          <CompanyDetailPage 
+            symbol={selectedCompany}
+            onBack={() => navigateTo('analyse')}
+          />
+        )}
       </main>
 
       {/* Footer */}

@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 // MOCK DATA IMPORT (kept as fallback)
 import mockMd from '../mock/portfolioTable.md?raw'
 
-export default function AnalysePage({ onBack }) {
+export default function AnalysePage({ onBack, onCompanySelect, portfolioLoaded = false, setPortfolioLoaded = () => {}, portfolioData = null, setPortfolioData = () => {} }) {
   const [tableHtml, setTableHtml] = useState('')
   const [loading, setLoading] = useState(false)
   const [newsSummaries, setNewsSummaries] = useState([])
@@ -12,8 +12,20 @@ export default function AnalysePage({ onBack }) {
   const [newsError, setNewsError] = useState('')
   const [holdings, setHoldings] = useState([])
 
+  console.log('AnalysePage render:', { portfolioLoaded, hasPortfolioData: !!portfolioData, holdingsLength: holdings.length, tableHtml: !!tableHtml })
+
   // API base for news + sentiment
   const API_BASE = 'https://api-indian-financial-markets-485071544262.asia-south1.run.app'
+
+  // Load cached portfolio data on mount or when portfolio state changes
+  useEffect(() => {
+    if (portfolioLoaded && portfolioData && holdings.length === 0 && !tableHtml) {
+      console.log('Loading cached portfolio data:', portfolioData)
+      setHoldings(portfolioData.holdings || [])
+      setTickers(portfolioData.tickers || [])
+      setTableHtml(portfolioData.tableHtml || '')
+    }
+  }, [portfolioLoaded, portfolioData]) // Run when portfolio state changes
 
   // HELPER: converts a markdown table into HTML. You can keep this helper when
   // replacing mock data (call it with server-provided markdown), or remove it
@@ -145,9 +157,27 @@ export default function AnalysePage({ onBack }) {
     }
   }
 
+  const handleRefresh = async () => {
+    // Clear all state when explicitly refreshing
+    setTableHtml('')
+    setHoldings([])
+    setTickers([])
+    setNewsSummaries([])
+    
+    // Clear persisted portfolio state
+    if (setPortfolioLoaded && setPortfolioData) {
+      setPortfolioLoaded(false)
+      setPortfolioData(null)
+    }
+    
+    // Then connect fresh
+    await handleConnect()
+  }
+
   const handleConnect = async () => {
     try {
       setLoading(true)
+      
       // Step 1: ask backend for MCP login URL
       try {
         const loginRes = await fetch('/api/mcp/login')
@@ -168,7 +198,7 @@ export default function AnalysePage({ onBack }) {
       while (attempts < 5) {
         attempts += 1
         try {
-          const hRes = await fetch('/api/mcp/holdings')
+          const hRes = await fetch('/api/mcp/holdings?refresh=true') // force fresh on explicit connect/refresh
           if (hRes.ok) {
             const data = await hRes.json()
             holdings = Array.isArray(data?.holdings) ? data.holdings : []
@@ -196,20 +226,45 @@ export default function AnalysePage({ onBack }) {
           .map(r => r.split('|').map(s => s.trim()).filter(Boolean)[colIdx] || '')
           .filter(Boolean)
         setTickers(companies)
+        
+        // Save portfolio state (if state management is available)
+        if (setPortfolioLoaded && setPortfolioData) {
+          setPortfolioLoaded(true)
+          setPortfolioData({
+            holdings: [],
+            tickers: companies,
+            tableHtml: html
+          })
+        }
+        
         await fetchNews(newsFilter, companies)
         return
       }
 
       // Build table from real holdings
-      setHoldings(holdings.map(deriveRow))
+      const derivedHoldings = holdings.map(deriveRow)
+      setHoldings(derivedHoldings)
       setTableHtml('')
       // Try to infer tickers/company codes from common fields
       const candidates = holdings.map(h => h?.symbol || h?.tradingsymbol || h?.ticker || h?.Company || h?.company).filter(Boolean)
       setTickers(candidates)
+      
+      // Save portfolio state (if state management is available) - Update cache after successful load
+      if (setPortfolioLoaded && setPortfolioData) {
+        setPortfolioLoaded(true)
+        setPortfolioData({
+          holdings: derivedHoldings,
+          tickers: candidates,
+          tableHtml: ''
+        })
+      }
+      
       await fetchNews(newsFilter, candidates)
     } catch (e) {
-      setTableHtml('<p style=\"color:#f99\">Failed to load mock data.</p>')
+      console.error('Error in handleConnect:', e)
+      setTableHtml('<p style="color:#f99">Failed to load portfolio data.</p>')
       setHoldings([])
+      setTickers([])
     } finally {
       setLoading(false)
     }
@@ -222,7 +277,7 @@ export default function AnalysePage({ onBack }) {
   }
 
   // Not connected yet: show centered hero card with header, subtitle, and buttons stacked below
-  if (!tableHtml && holdings.length === 0) {
+  if (!portfolioLoaded) {
     return (
       <div className="container analyse-center">
         <div className="analyse-hero-card">
@@ -245,7 +300,7 @@ export default function AnalysePage({ onBack }) {
       <div className="analyse-header">
         <h2 className="analyse-title">Analyse your portfolio</h2>
         <div className="analyse-actions">
-          <button className="btn-primary" onClick={handleConnect} disabled={loading}>
+          <button className="btn-primary" onClick={handleRefresh} disabled={loading}>
             {loading ? 'Loading…' : 'Refresh your Zerodha Portfolio'}
           </button>
           <button className="btn-primary" onClick={onBack}>Return to Home</button>          
@@ -275,7 +330,13 @@ export default function AnalysePage({ onBack }) {
                 const dcPos = Number(r.day_change) > 0
                 const dcNeg = Number(r.day_change) < 0
                 return (
-                  <tr key={idx}>
+                  <tr 
+                    key={idx} 
+                    className="clickable-row"
+                    onClick={() => onCompanySelect && onCompanySelect(r.tradingsymbol)}
+                    style={{ cursor: 'pointer' }}
+                    title={`Click to view details for ${r.tradingsymbol}`}
+                  >
                     <td>{r.tradingsymbol}</td>
                     <td className="numeric">{fmtNum(r.price)}</td>
                     <td className="numeric">{fmtNum(r.quantity, 0)}</td>

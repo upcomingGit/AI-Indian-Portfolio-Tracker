@@ -32,4 +32,222 @@
 	font-weight: 500;
 }
 
+/* Clickable table rows */
+.clickable-row {
+	transition: background-color 150ms ease, transform 100ms ease;
+}
+.clickable-row:hover {
+	background: rgba(139,92,246,0.15) !important;
+	transform: translateY(-1px);
+}
+.clickable-row:active {
+	transform: translateY(0);
+}
+
+/* Company Detail Page */
+.company-detail-page {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2rem 1rem;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.company-detail-header {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	margin-bottom: 3rem;
+	align-items: flex-start;
+}
+
+.back-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	text-decoration: none;
+	margin-bottom: 1rem;
+}
+
+.company-title {
+	font-size: 2.5rem;
+	margin: 0;
+	color: var(--text-0);
+	font-weight: 700;
+}
+
+.company-symbol {
+	font-size: 1.2rem;
+	color: var(--muted);
+	font-weight: 600;
+	background: rgba(139,92,246,0.1);
+	padding: 0.3rem 0.8rem;
+	border-radius: 6px;
+	border: 1px solid rgba(139,92,246,0.2);
+}
+
+/* Metrics Grid */
+.company-metrics-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 1.5rem;
+	margin-bottom: 3rem;
+	min-height: 140px; /* Prevent layout shift */
+}
+
+/* For smaller screens but still want horizontal layout */
+@media (max-width: 1024px) {
+	.company-metrics-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.metric-card {
+	background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0));
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 1.5rem;
+	text-align: center;
+	min-height: 120px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.metric-card h3 {
+	font-size: 0.9rem;
+	margin: 0 0 0.8rem 0;
+	color: var(--muted);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.metric-value {
+	font-size: 1.8rem;
+	font-weight: 700;
+	color: var(--text-0);
+	margin-bottom: 0.5rem;
+}
+
+.metric-change {
+	font-size: 0.9rem;
+	font-weight: 600;
+}
+
+.metric-change.positive {
+	color: #22c55e;
+}
+
+.metric-change.negative {
+	color: #ef4444;
+}
+
+.metric-subtitle {
+	font-size: 0.85rem;
+	color: var(--muted);
+	margin-top: 0.3rem;
+}
+
+.metric-value.positive {
+	color: #22c55e;
+}
+
+.metric-value.negative {
+	color: #ef4444;
+}
+
+/* Holdings Detail Card */
+.holdings-detail-card {
+	background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0));
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 1.5rem;
+	margin-bottom: 3rem;
+}
+
+.holdings-detail-card h3 {
+	margin: 0 0 1.5rem 0;
+	font-size: 1.3rem;
+	color: var(--text-0);
+}
+
+.holdings-details-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 1rem;
+}
+
+.detail-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.8rem;
+	background: rgba(255,255,255,0.02);
+	border-radius: 8px;
+	border: 1px solid rgba(255,255,255,0.05);
+}
+
+.detail-label {
+	color: var(--muted);
+	font-weight: 500;
+	font-size: 0.9rem;
+}
+
+.detail-value {
+	color: var(--text-0);
+	font-weight: 600;
+}
+
+/* Company News Section */
+.company-news-section {
+	margin-top: 2rem;
+}
+
+.company-news-row {
+	max-width: 100%;
+	margin-bottom: 1.5rem;
+}
+
+.company-news-row .news-paragraph {
+	font-size: 1rem;
+	line-height: 1.6;
+	color: var(--text-1);
+}
+
+/* Error states */
+.error-container, .loading-container {
+	text-align: center;
+	padding: 3rem 1rem;
+}
+
+.error-message {
+	background: rgba(239,68,68,0.1);
+	border: 1px solid rgba(239,68,68,0.2);
+	border-radius: 8px;
+	padding: 1rem;
+	margin: 1rem 0;
+	color: #ef4444;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+	.company-detail-header {
+		text-align: center;
+		align-items: center;
+	}
+	
+	.company-title {
+		font-size: 2rem;
+	}
+	
+	.company-metrics-grid {
+		grid-template-columns: 1fr;
+	}
+	
+	.holdings-details-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
 /* Reverted custom news card styles to default (no overrides) */

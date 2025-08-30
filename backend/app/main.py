@@ -1,4 +1,5 @@
 import os
+import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -47,6 +48,11 @@ def create_app() -> FastAPI:
         except Exception as e:
             print(f"[MCP][STARTUP] Unable to read MCP manager details: {e}")
 
+    # Initialize in-memory cache
+    app.state.holdings_cache = None  # type: ignore[attr-defined]
+    app.state.holdings_cache_ts = None  # type: ignore[attr-defined]
+    app.state.holdings_cache_lock = asyncio.Lock()  # type: ignore[attr-defined]
+
     @app.get("/api/mcp/login")
     async def mcp_login():
         try:
@@ -59,9 +65,20 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/api/mcp/holdings", response_model=HoldingsResponse)
-    async def mcp_holdings():
+    async def mcp_holdings(refresh: bool = False):
         try:
-            print("[MCP][HTTP] GET /api/mcp/holdings - fetching holdings...")
+            print(f"[MCP][HTTP] GET /api/mcp/holdings - refresh={refresh}")
+
+            # If not forcing refresh and cache exists, serve cached
+            try:
+                if not refresh and getattr(app.state, "holdings_cache", None) is not None:  # type: ignore[attr-defined]
+                    cached = app.state.holdings_cache  # type: ignore[attr-defined]
+                    print("[MCP][CACHE] Returning cached holdings")
+                    return {"holdings": cached}
+            except Exception:
+                pass
+
+            # Otherwise, fetch fresh from MCP and update cache
             raw_holdings = await mcp_manager.get_holdings()
             count = len(raw_holdings) if isinstance(raw_holdings, list) else 0
             sample_keys = list(raw_holdings[0].keys()) if count else []
@@ -124,6 +141,13 @@ def create_app() -> FastAPI:
                         o[nk] = _to_num(o[nk])
 
                 filtered.append(o)
+
+            # Save to cache
+            try:
+                async with app.state.holdings_cache_lock:  # type: ignore[attr-defined]
+                    app.state.holdings_cache = filtered  # type: ignore[attr-defined]
+            except Exception:
+                pass
 
             return {"holdings": filtered}
         except Exception as e:
