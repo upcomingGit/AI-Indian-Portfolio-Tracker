@@ -190,6 +190,30 @@ body {
 }
 .portfolio-card .portfolio-table { border-radius: 8px; border: none; background: transparent; }
 
+/* Analyse holdings table polish */
+.analyse-portfolio-table th,
+.analyse-portfolio-table td { vertical-align: middle; }
+.analyse-portfolio-table th.numeric,
+.analyse-portfolio-table td.numeric { text-align: right; }
+.analyse-portfolio-table td.muted { color: var(--muted); }
+.analyse-portfolio-table td .pill,
+.analyse-portfolio-table td .badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.05);
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--text-1);
+}
+.analyse-portfolio-table td .pill.on { background: rgba(37,99,235,0.12); color: #93c5fd; border-color: rgba(37,99,235,0.2); }
+.analyse-portfolio-table td .pill.off { background: rgba(156,163,175,0.07); color: #9ca3af; border-color: rgba(156,163,175,0.12); }
+.analyse-portfolio-table td.pnl.positive { color: #22c55e; }
+.analyse-portfolio-table td.pnl.negative { color: #ef4444; }
+.analyse-portfolio-table td.positive { color: #22c55e; }
+.analyse-portfolio-table td.negative { color: #ef4444; }
+
 /* News Summary section styles */
 .news-summary { margin-top: 7.8rem; }
 .news-summary .news-title { font-size: 2.25rem; margin: 0 0 0.8rem 0; }

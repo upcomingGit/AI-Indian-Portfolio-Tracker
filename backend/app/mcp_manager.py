@@ -107,6 +107,7 @@ class MCPManager:
         while attempt < retries:
             try:
                 raw = await client.call_tool("get_holdings", {})
+                print(f"Raw holdings data: {raw}")
                 data = await self._normalize_tool_result(raw)
                 # Expect a list[dict] of holdings; tolerate dict with key
                 if isinstance(data, dict) and "holdings" in data:

@@ -10,6 +10,7 @@ export default function AnalysePage({ onBack }) {
   const [tickers, setTickers] = useState([])
   const [newsLoading, setNewsLoading] = useState(false)
   const [newsError, setNewsError] = useState('')
+  const [holdings, setHoldings] = useState([])
 
   // API base for news + sentiment
   const API_BASE = 'https://api-indian-financial-markets-485071544262.asia-south1.run.app'
@@ -45,6 +46,37 @@ export default function AnalysePage({ onBack }) {
       return `<tr data-row=\"${idx}\">${tds}</tr>`
     }).join('')
     return `<table class=\"portfolio-table\"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`
+  }
+
+  // Formatting helpers
+  const fmtNum = (n, digits = 2) => {
+    if (n === null || n === undefined || isNaN(n)) return '-'
+    return Number(n).toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits })
+  }
+  const fmtPct = (n) => (n === null || n === undefined || isNaN(n) ? '-' : `${fmtNum(n, 2)}%`)
+
+  const deriveRow = (h) => {
+    const price = Number(h?.price ?? h?.last_price ?? h?.close_price ?? 0)
+    const qty = Number(h?.quantity ?? 0)
+    const avg = Number(h?.average_price ?? 0)
+    const close = Number(h?.close_price ?? price)
+    const dayChange = h?.day_change !== undefined ? Number(h.day_change) : (price - close)
+    const dayChangePct = h?.day_change_percentage !== undefined
+      ? Number(h.day_change_percentage)
+      : (close ? ((dayChange / close) * 100) : 0)
+    const pnl = h?.pnl !== undefined ? Number(h.pnl) : ((price - avg) * qty)
+    return {
+      tradingsymbol: h?.tradingsymbol ?? h?.symbol ?? h?.ticker ?? '-',
+      price,
+      quantity: qty,
+      t1_quantity: Number(h?.t1_quantity ?? h?.t1Quantity ?? 0),
+      opening_quantity: Number(h?.opening_quantity ?? h?.openingQuantity ?? 0),
+      average_price: avg,
+      close_price: close,
+      pnl,
+      day_change: dayChange,
+      day_change_percentage: dayChangePct,
+    }
   }
 
   // timeframe -> API path segment
@@ -152,6 +184,7 @@ export default function AnalysePage({ onBack }) {
       if (!holdings || holdings.length === 0) {
         const html = parseMarkdownTableToHtml(mockMd)
         setTableHtml(html)
+        setHoldings([])
         const lines = mockMd.trim().split(/\r?\n/).filter(Boolean)
         const headerLine = lines[0] || ''
         const rows = lines.slice(2)
@@ -168,14 +201,15 @@ export default function AnalysePage({ onBack }) {
       }
 
       // Build table from real holdings
-      const html = holdingsToHtml(holdings)
-      setTableHtml(html)
+      setHoldings(holdings.map(deriveRow))
+      setTableHtml('')
       // Try to infer tickers/company codes from common fields
       const candidates = holdings.map(h => h?.symbol || h?.tradingsymbol || h?.ticker || h?.Company || h?.company).filter(Boolean)
       setTickers(candidates)
       await fetchNews(newsFilter, candidates)
     } catch (e) {
       setTableHtml('<p style=\"color:#f99\">Failed to load mock data.</p>')
+      setHoldings([])
     } finally {
       setLoading(false)
     }
@@ -188,7 +222,7 @@ export default function AnalysePage({ onBack }) {
   }
 
   // Not connected yet: show centered hero card with header, subtitle, and buttons stacked below
-  if (!tableHtml) {
+  if (!tableHtml && holdings.length === 0) {
     return (
       <div className="container analyse-center">
         <div className="analyse-hero-card">
@@ -217,7 +251,50 @@ export default function AnalysePage({ onBack }) {
           <button className="btn-primary" onClick={onBack}>Return to Home</button>          
         </div>
       </div>
-      <div className="portfolio-table-full portfolio-card" dangerouslySetInnerHTML={{ __html: tableHtml }} />
+  {holdings.length > 0 ? (
+        <div className="portfolio-table-full portfolio-card">
+          <table className="portfolio-table analyse-portfolio-table">
+            <thead>
+              <tr>
+                <th title="Trading symbol / Ticker">Symbol</th>
+                <th className="numeric" title="Last traded price">Price</th>
+                <th className="numeric" title="Total quantity held">Quantity</th>
+                <th className="numeric" title="T1 quantity (shares pending delivery)">T1 Qty</th>
+                <th className="numeric" title="Opening quantity for the day">Opening Qty</th>
+                <th className="numeric" title="Average buy price">Avg Price</th>
+                <th className="numeric" title="Previous close price">Prev Close</th>
+                <th className="numeric" title="Unrealized profit/loss">P&L</th>
+                <th className="numeric" title="Change since previous close">Day Change</th>
+                <th className="numeric" title="Percent change since previous close">Day Change %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {holdings.map((r, idx) => {
+                const pnlPos = Number(r.pnl) > 0
+                const pnlNeg = Number(r.pnl) < 0
+                const dcPos = Number(r.day_change) > 0
+                const dcNeg = Number(r.day_change) < 0
+                return (
+                  <tr key={idx}>
+                    <td>{r.tradingsymbol}</td>
+                    <td className="numeric">{fmtNum(r.price)}</td>
+                    <td className="numeric">{fmtNum(r.quantity, 0)}</td>
+                    <td className="numeric muted">{fmtNum(r.t1_quantity, 0)}</td>
+                    <td className="numeric muted">{fmtNum(r.opening_quantity, 0)}</td>
+                    <td className="numeric">{fmtNum(r.average_price)}</td>
+                    <td className="numeric">{fmtNum(r.close_price)}</td>
+                    <td className={`numeric pnl ${pnlPos ? 'positive' : ''} ${pnlNeg ? 'negative' : ''}`}>{fmtNum(r.pnl)}</td>
+                    <td className={`numeric ${dcPos ? 'positive' : ''} ${dcNeg ? 'negative' : ''}`}>{fmtNum(r.day_change)}</td>
+                    <td className={`numeric ${dcPos ? 'positive' : ''} ${dcNeg ? 'negative' : ''}`}>{fmtPct(r.day_change_percentage)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="portfolio-table-full portfolio-card" dangerouslySetInnerHTML={{ __html: tableHtml }} />
+      )}
 
       <section className="news-summary">
         <h3 className="news-title">News Summary</h3>
