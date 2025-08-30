@@ -149,6 +149,14 @@
 	margin-top: 0.3rem;
 }
 
+.metric-subtitle.positive {
+	color: #22c55e;
+}
+
+.metric-subtitle.negative {
+	color: #ef4444;
+}
+
 .metric-value.positive {
 	color: #22c55e;
 }

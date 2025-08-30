@@ -207,23 +207,37 @@ export default function CompanyDetailPage({ symbol, onBack }) {
           {/* Price and Performance Section */}
           <div className="company-metrics-grid">
             <div className="metric-card">
-              <h3>Current Price</h3>
-              <div className="metric-value">₹{fmtNum(companyData?.price)}</div>
-              <div className={`metric-change ${dayChangePositive ? 'positive' : ''} ${dayChangeNegative ? 'negative' : ''}`}>
-                {dayChangePositive ? '+' : ''}{fmtNum(companyData?.day_change)} ({fmtPct(companyData?.day_change_percentage)})
+              <h3>Current Investment</h3>
+              <div className="metric-value">₹{fmtNum(companyData?.investment_value)}</div>
+              <div className="metric-subtitle">
+                {fmtNum(companyData?.quantity, 0)} shares @ ₹{fmtNum(companyData?.average_price)}
               </div>
             </div>
 
             <div className="metric-card">
-              <h3>Your Holdings</h3>
-              <div className="metric-value">{fmtNum(companyData?.quantity, 0)} shares</div>
-              <div className="metric-subtitle">Avg Price: ₹{fmtNum(companyData?.average_price)}</div>
+              <h3>Market Value</h3>
+              <div className="metric-value">
+                ₹{fmtNum(companyData?.market_value && companyData.market_value > 0 
+                  ? companyData.market_value 
+                  : (companyData?.close_price || 0) * (companyData?.quantity || 0))}
+              </div>
+              <div className="metric-subtitle">
+                {fmtNum(companyData?.quantity, 0)} shares @ ₹{fmtNum(
+                  companyData?.market_value && companyData.market_value > 0 
+                    ? companyData.price 
+                    : companyData?.close_price
+                )}
+              </div>
             </div>
 
             <div className="metric-card">
-              <h3>Market Value</h3>
-              <div className="metric-value">₹{fmtNum(companyData?.market_value)}</div>
-              <div className="metric-subtitle">Investment: ₹{fmtNum(companyData?.investment_value)}</div>
+              <h3>Day Change</h3>
+              <div className={`metric-value ${dayChangePositive ? 'positive' : ''} ${dayChangeNegative ? 'negative' : ''}`}>
+                ₹{fmtNum(companyData?.price)}
+              </div>
+              <div className={`metric-subtitle ${dayChangePositive ? 'positive' : ''} ${dayChangeNegative ? 'negative' : ''}`}>
+                {dayChangePositive ? '+' : ''}₹{fmtNum(companyData?.day_change)} ({fmtPct(companyData?.day_change_percentage)})
+              </div>
             </div>
 
             <div className="metric-card">
@@ -231,7 +245,7 @@ export default function CompanyDetailPage({ symbol, onBack }) {
               <div className={`metric-value ${pnlPositive ? 'positive' : ''} ${pnlNegative ? 'negative' : ''}`}>
                 ₹{fmtNum(companyData?.pnl)}
               </div>
-              <div className="metric-subtitle">
+              <div className={`metric-subtitle ${pnlPositive ? 'positive' : ''} ${pnlNegative ? 'negative' : ''}`}>
                 {companyData?.pnl && companyData?.investment_value ? 
                   `${fmtPct((companyData.pnl / companyData.investment_value) * 100)} return` : 
                   '-'
@@ -253,8 +267,8 @@ export default function CompanyDetailPage({ symbol, onBack }) {
                 <span className="detail-value">{fmtNum(companyData?.t1_quantity, 0)}</span>
               </div>
               <div className="detail-item">
-                <span className="detail-label">Opening Quantity:</span>
-                <span className="detail-value">{fmtNum(companyData?.opening_quantity, 0)}</span>
+                <span className="detail-label">Average Price:</span>
+                <span className="detail-value">{fmtNum(companyData?.average_price, 0)}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Previous Close:</span>
