@@ -7,6 +7,8 @@ export default function CompanyDetailPage({ symbol, onBack }) {
   const [newsLoading, setNewsLoading] = useState(false)
   const [newsFilter, setNewsFilter] = useState(7) // days
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState('daily') // daily, quarterly, yearly
+  const [activeQuarter, setActiveQuarter] = useState('Q1-2024') // for quarterly tab
 
   const API_BASE = 'https://api-indian-financial-markets-485071544262.asia-south1.run.app'
 
@@ -276,58 +278,173 @@ export default function CompanyDetailPage({ symbol, onBack }) {
               </div>
             </div>
           </div>
-        </>
-      )}
 
-      {/* News Section */}
-      <section className="company-news-section">
-        <h3 className="news-title">News & Sentiment</h3>
-        <div className="news-controls">
-          <div className="news-filters">
-            <button 
-              className={`filter-btn ${newsFilter === 1 ? 'active' : ''}`} 
-              onClick={() => changeNewsFilter(1)} 
-              disabled={newsLoading}
-            >
-              Last 1 Day
-            </button>
-            <button 
-              className={`filter-btn ${newsFilter === 7 ? 'active' : ''}`} 
-              onClick={() => changeNewsFilter(7)} 
-              disabled={newsLoading}
-            >
-              Last 7 Days
-            </button>
-            <button 
-              className={`filter-btn ${newsFilter === 30 ? 'active' : ''}`} 
-              onClick={() => changeNewsFilter(30)} 
-              disabled={newsLoading}
-            >
-              Last 30 Days
-            </button>
-          </div>
-        </div>
-        
-        <div className="news-list" style={{ position: 'relative' }}>
-          {newsLoading && (
-            <div className="news-loading-overlay">
-              <div className="news-spinner" />
-              <span className="news-loading-text">Fetching news summary…</span>
-            </div>
-          )}
-          
-          {newsData.map(ns => (
-            <div className="news-row company-news-row" key={ns.ticker}>
-              <div className="news-row-header">
-                <span className={`sentiment-tag ${ns.sentiment.toLowerCase()}`}>{ns.sentiment}</span>
-              </div>
-              <p className="news-paragraph" style={{ whiteSpace: 'pre-line' }}>
-                {formatBulletPoints(ns.summary)}
+          {/* Investment Recommendation Card */}
+          <div className="recommendation-card">
+            <h3>Investment Recommendation</h3>
+            <div className="recommendation-content">
+              <p className="recommendation-placeholder">
+                Analysis coming soon... This section will provide AI-powered insights on whether to hold, buy more, or sell this stock based on comprehensive analysis.
               </p>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+
+          {/* Tabbed Content Section */}
+          <div className="company-tabs-container">
+            <div className="tabs-header">
+              <button 
+                className={`tab-btn ${activeTab === 'daily' ? 'active' : ''}`}
+                onClick={() => setActiveTab('daily')}
+              >
+                Daily Updates
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'quarterly' ? 'active' : ''}`}
+                onClick={() => setActiveTab('quarterly')}
+              >
+                Quarterly Updates
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'yearly' ? 'active' : ''}`}
+                onClick={() => setActiveTab('yearly')}
+              >
+                Yearly Updates
+              </button>
+            </div>
+
+            <div className="tab-content">
+              {/* Daily Updates Tab */}
+              {activeTab === 'daily' && (
+                <div className="daily-tab-content">
+                  <div className="daily-cards-grid">
+                    {/* News Section */}
+                    <section className="company-news-section">
+                      <h3 className="news-title">News & Sentiment</h3>
+                      <div className="news-controls">
+                        <div className="news-filters">
+                          <button 
+                            className={`filter-btn ${newsFilter === 1 ? 'active' : ''}`} 
+                            onClick={() => changeNewsFilter(1)} 
+                            disabled={newsLoading}
+                          >
+                            Last 1 Day
+                          </button>
+                          <button 
+                            className={`filter-btn ${newsFilter === 7 ? 'active' : ''}`} 
+                            onClick={() => changeNewsFilter(7)} 
+                            disabled={newsLoading}
+                          >
+                            Last 7 Days
+                          </button>
+                          <button 
+                            className={`filter-btn ${newsFilter === 30 ? 'active' : ''}`} 
+                            onClick={() => changeNewsFilter(30)} 
+                            disabled={newsLoading}
+                          >
+                            Last 30 Days
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="news-list" style={{ position: 'relative' }}>
+                        {newsLoading && (
+                          <div className="news-loading-overlay">
+                            <div className="news-spinner" />
+                            <span className="news-loading-text">Fetching news summary…</span>
+                          </div>
+                        )}
+                        
+                        {newsData.map(ns => (
+                          <div className="news-row company-news-row" key={ns.ticker}>
+                            <div className="news-row-header">
+                              <span className={`sentiment-tag ${ns.sentiment.toLowerCase()}`}>{ns.sentiment}</span>
+                            </div>
+                            <p className="news-paragraph" style={{ whiteSpace: 'pre-line' }}>
+                              {formatBulletPoints(ns.summary)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* Corporate Events Card */}
+                    <div className="corporate-events-card">
+                      <h3>Corporate Events & Announcements</h3>
+                      <div className="events-content">
+                        <p className="events-placeholder">
+                          Corporate events, earnings announcements, dividend declarations, and other important company updates will appear here.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Quarterly Updates Tab */}
+              {activeTab === 'quarterly' && (
+                <div className="quarterly-tab-content">
+                  <div className="quarterly-nav">
+                    <div className="quarter-filters">
+                      {['Q1-2024', 'Q2-2024', 'Q3-2024', 'Q4-2024', 'Q1-2025'].map(quarter => (
+                        <button 
+                          key={quarter}
+                          className={`quarter-btn ${activeQuarter === quarter ? 'active' : ''}`}
+                          onClick={() => setActiveQuarter(quarter)}
+                        >
+                          {quarter}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="quarterly-content">
+                    <h4>Financial Quarter: {activeQuarter}</h4>
+                    
+                    <div className="quarterly-cards-grid">
+                      <div className="quarterly-card">
+                        <h5>Conference Call PDF</h5>
+                        <p>Conference call transcript and presentation materials will be available here.</p>
+                      </div>
+                      
+                      <div className="quarterly-card">
+                        <h5>Quarterly Results</h5>
+                        <p>Financial results, key metrics, and performance indicators for {activeQuarter}.</p>
+                      </div>
+                      
+                      <div className="quarterly-card">
+                        <h5>Call Summary & Sentiment</h5>
+                        <p>AI-generated summary of the conference call with sentiment analysis and key highlights.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Yearly Updates Tab */}
+              {activeTab === 'yearly' && (
+                <div className="yearly-tab-content">
+                  <div className="yearly-cards-grid">
+                    <div className="yearly-card">
+                      <h4>Annual Report Links</h4>
+                      <p>Direct links to annual reports, regulatory filings, and comprehensive company documentation.</p>
+                    </div>
+                    
+                    <div className="yearly-card">
+                      <h4>Annual Report Summary</h4>
+                      <p>AI-powered analysis and summary of the annual report highlighting key business developments, strategies, and outlook.</p>
+                    </div>
+                    
+                    <div className="yearly-card">
+                      <h4>Yearly Financials</h4>
+                      <p>Comprehensive financial data, ratios, and year-over-year performance metrics.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

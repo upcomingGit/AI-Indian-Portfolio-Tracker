@@ -219,6 +219,12 @@ body {
 .news-summary .news-title { font-size: 2.25rem; margin: 0 0 0.8rem 0; }
 .news-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 
+/* Override for daily tab - single column layout */
+.daily-tab-content .news-list { 
+  display: block; 
+  grid-template-columns: none; 
+}
+
 @media (max-width: 760px) {
   .news-list { grid-template-columns: 1fr; }
 }
@@ -245,9 +251,481 @@ body {
 .analyse-page.with-boundary { border: 1px solid var(--line); border-radius: 12px; padding: 1rem; background: linear-gradient(180deg, rgba(139,92,246,0.02), rgba(0,0,0,0)); }
 .analyse-page.with-boundary .analyse-header { width: 100%; }
 
+/* Company Detail Page Styles */
+.company-detail-page {
+  padding: 2rem 0;
+}
+
+.company-detail-header {
+  margin-bottom: 2rem;
+}
+
+.back-btn {
+  margin-bottom: 1rem;
+}
+
+.company-title {
+  font-size: 2.5rem;
+  margin: 0.5rem 0 0.25rem 0;
+  color: var(--text-0);
+}
+
+.company-symbol {
+  font-size: 1.1rem;
+  color: var(--purple-300);
+  font-weight: 600;
+}
+
+.company-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.085);
+}
+
+.metric-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--text-0);
+}
+
+.metric-value.positive {
+  color: #22c55e;
+}
+
+.metric-value.negative {
+  color: #ef4444;
+}
+
+.metric-subtitle {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.metric-subtitle.positive {
+  color: #22c55e;
+}
+
+.metric-subtitle.negative {
+  color: #ef4444;
+}
+
+.holdings-detail-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.085);
+  margin-bottom: 2rem;
+}
+
+.holdings-detail-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: var(--text-0);
+}
+
+.holdings-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.detail-label {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.detail-value {
+  color: var(--text-0);
+  font-weight: 600;
+}
+
+/* Investment Recommendation Card */
+.recommendation-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.085);
+  margin-bottom: 2rem;
+}
+
+.recommendation-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: var(--text-0);
+}
+
+.recommendation-content {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.recommendation-placeholder {
+  color: var(--muted);
+  font-style: italic;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Tabbed Interface */
+.company-tabs-container {
+  margin-top: 2rem;
+}
+
+.tabs-header {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab-btn {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: 1rem 1.5rem;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+  color: var(--text-1);
+  background: rgba(255,255,255,0.05);
+}
+
+.tab-btn.active {
+  color: var(--purple-300);
+  background: rgba(139,92,246,0.12);
+  border-bottom-color: var(--purple-400);
+}
+
+.tab-content {
+  min-height: 400px;
+}
+
+/* Daily Tab Content */
+.daily-tab-content {
+  width: 100%;
+}
+
+.daily-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+  width: 100%;
+}
+
+/* News Section - Override default styling for daily tab */
+.daily-cards-grid .company-news-section {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.085);
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.daily-cards-grid .company-news-section .news-title {
+  font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+  color: var(--text-0);
+}
+
+.daily-cards-grid .company-news-section .news-controls {
+  margin-bottom: 1rem;
+}
+
+.daily-cards-grid .company-news-section .news-list {
+  display: block !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+  width: 100%;
+  overflow: hidden;
+}
+
+.daily-cards-grid .company-news-section .news-row {
+  margin-bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.9rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.085);
+  overflow: hidden;
+}
+
+.daily-cards-grid .company-news-section .news-paragraph {
+  margin: 0;
+  color: var(--text-1);
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-line;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Corporate Events Card */
+.daily-cards-grid .corporate-events-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.085);
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.corporate-events-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: var(--text-0);
+}
+
+.events-content {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.events-placeholder {
+  color: var(--muted);
+  font-style: italic;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Quarterly Tab Content */
+.quarterly-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.quarterly-nav {
+  margin-bottom: 1rem;
+}
+
+.quarter-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.quarter-btn {
+  background: transparent;
+  color: var(--text-0);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.quarter-btn:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.quarter-btn.active {
+  background: linear-gradient(90deg, var(--purple-400), var(--blue-600));
+  color: white;
+  border-color: rgba(124,58,237,0.6);
+}
+
+.quarterly-content h4 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.3rem;
+  color: var(--text-0);
+}
+
+.quarterly-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.quarterly-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.085);
+}
+
+.quarterly-card h5 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: var(--purple-300);
+}
+
+.quarterly-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Yearly Tab Content */
+.yearly-tab-content {
+  padding: 1rem 0;
+}
+
+.yearly-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.yearly-card {
+  padding: 2rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.065);
+  border: 1px solid rgba(255,255,255,0.085);
+}
+
+.yearly-card h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: var(--purple-300);
+}
+
+.yearly-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Company News Section Updates */
+.company-news-section {
+  width: 100%;
+}
+
+.company-news-row {
+  margin-bottom: 1rem;
+}
+
+/* Loading states */
+.news-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(11, 11, 18, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  border-radius: 8px;
+  z-index: 10;
+}
+
+/* Specific override for news loading overlay in daily tab */
+.daily-cards-grid .company-news-section .news-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(11, 11, 18, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  border-radius: 8px;
+  z-index: 10;
+  margin: 0;
+}
+
+.news-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(139,92,246,0.3);
+  border-radius: 50%;
+  border-top-color: var(--purple-400);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.news-loading-text {
+  color: var(--text-1);
+  font-size: 0.9rem;
+}
+
 /* Responsive */
 @media (max-width: 760px) {
   .hero { padding: 3rem 1rem; }
   .hero-title { font-size: 2rem; }
   .cards-grid { grid-template-columns: 1fr; }
+  
+  .company-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .daily-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+  }
+  
+  .tabs-header {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .tab-btn {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+  }
+  
+  .tab-btn.active {
+    border-left-color: var(--purple-400);
+    border-bottom: none;
+  }
+  
+  .quarterly-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .yearly-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .quarter-filters {
+    justify-content: center;
+  }
 }

@@ -2,15 +2,19 @@ import asyncio
 import json
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 # Tolerate missing fastmcp at import time; raise clear error when used
-try:
+if TYPE_CHECKING:
     from fastmcp import Client  # type: ignore
     from fastmcp.client.transports import SSETransport  # type: ignore
-except Exception:  # pragma: no cover - runtime guard
-    Client = None  # type: ignore
-    SSETransport = None  # type: ignore
+else:
+    try:
+        from fastmcp import Client  # type: ignore
+        from fastmcp.client.transports import SSETransport  # type: ignore
+    except Exception:  # pragma: no cover - runtime guard
+        Client = None  # type: ignore
+        SSETransport = None  # type: ignore
 
 
 def extract_url(obj: Any) -> Optional[str]:
@@ -67,10 +71,10 @@ class MCPManager:
     def __init__(self, sse_url: Optional[str] = None, headers: Optional[Dict[str, str]] = None):
         self.sse_url = sse_url or os.getenv("MCP_SSE_URL", "https://mcp.kite.trade/sse")
         self.headers = headers or {}
-        self._client: Optional[Client] = None  # type: ignore
+        self._client: Optional["Client"] = None  # type: ignore
         self._lock = asyncio.Lock()
 
-    async def _ensure_client(self) -> Client:
+    async def _ensure_client(self) -> "Client":
         if Client is None or SSETransport is None:  # pragma: no cover - runtime guard
             raise RuntimeError(
                 "fastmcp package is not available. Please install it: pip install fastmcp"
