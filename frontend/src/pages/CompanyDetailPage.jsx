@@ -6,9 +6,15 @@ export default function CompanyDetailPage({ symbol, onBack }) {
   const [newsData, setNewsData] = useState([])
   const [newsLoading, setNewsLoading] = useState(false)
   const [newsFilter, setNewsFilter] = useState(7) // days
+  const [eventsFilter, setEventsFilter] = useState(30) // 30 days or 'all'
+  const [eventsData, setEventsData] = useState([])
+  const [eventsLoading, setEventsLoading] = useState(false)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState('daily') // daily, quarterly, yearly
   const [activeQuarter, setActiveQuarter] = useState('Q1-2024') // for quarterly tab
+  const [knowledgeBasePaneOpen, setKnowledgeBasePaneOpen] = useState(false)
+  const [knowledgeBaseData, setKnowledgeBaseData] = useState('')
+  const [knowledgeBaseLoading, setKnowledgeBaseLoading] = useState(false)
 
   const API_BASE = 'https://api-indian-financial-markets-485071544262.asia-south1.run.app'
 
@@ -153,12 +159,148 @@ export default function CompanyDetailPage({ symbol, onBack }) {
     if (symbol) {
       fetchCompanyData()
       fetchNews(newsFilter)
+      fetchCorporateEvents(eventsFilter)
     }
   }, [symbol])
 
   const changeNewsFilter = async (days) => {
     setNewsFilter(days)
     await fetchNews(days)
+  }
+
+  // Fetch corporate events data
+  const fetchCorporateEvents = async (filter) => {
+    try {
+      setEventsLoading(true)
+      
+      // Call the backend API for corporate events
+      const filterParam = filter === 'all' ? 'all' : String(filter)
+      const url = `/api/corporate-events/${encodeURIComponent(symbol)}?filter_type=${filterParam}`
+      console.log('[Corporate Events API] GET', url)
+      
+      const res = await fetch(url)
+      if (!res.ok) {
+        console.warn(`[Corporate Events API] HTTP ${res.status}, falling back to placeholder`)
+        throw new Error(`HTTP ${res.status}`)
+      }
+      
+      const data = await res.json()
+      const events = Array.isArray(data?.events) ? data.events : []
+      
+      console.log(`[Corporate Events API] Received ${events.length} events`)
+      setEventsData(events)
+      
+    } catch (err) {
+      console.error('Error fetching corporate events:', err)
+      
+      // Fallback to placeholder data on error
+      const placeholderEvents = filter === 'all' ? [
+        {
+          id: 1,
+          event_type: 'Dividend Declaration',
+          description: 'Board declared interim dividend of ₹12 per share',
+          event_date: '2024-12-15',
+          record_date: '2024-12-20'
+        },
+        {
+          id: 2,
+          event_type: 'Earnings Announcement',
+          description: 'Q3 FY2024 earnings results announced',
+          event_date: '2024-11-10',
+          eps: '₹45.20'
+        },
+        {
+          id: 3,
+          event_type: 'Stock Split',
+          description: 'Board approved stock split in ratio 1:2',
+          event_date: '2024-08-22',
+          ex_date: '2024-09-01'
+        }
+      ] : [
+        {
+          id: 1,
+          event_type: 'Dividend Declaration',
+          description: 'Board declared interim dividend of ₹12 per share',
+          event_date: '2024-12-15',
+          record_date: '2024-12-20'
+        }
+      ]
+      
+      setEventsData(placeholderEvents)
+    } finally {
+      setEventsLoading(false)
+    }
+  }
+
+  const changeEventsFilter = async (filter) => {
+    setEventsFilter(filter)
+    await fetchCorporateEvents(filter)
+  }
+
+  // Fetch knowledge base data
+  const fetchKnowledgeBase = async () => {
+    setKnowledgeBaseLoading(true)
+    try {
+      // TODO: Replace with actual API call when backend is ready
+      // const url = `${API_BASE}/companies/${encodeURIComponent(symbol)}/knowledge-base/`
+      // const res = await fetch(url)
+      // if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      // const data = await res.json()
+      
+      // Placeholder data for now
+      const placeholderData = `
+📊 Analyst Knowledge Base for ${symbol}
+
+🔍 Company Overview:
+This section will contain comprehensive analyst research and insights about ${companyData?.company_name || symbol}.
+
+📈 Key Financial Metrics:
+• Revenue growth trends and projections
+• Profitability analysis and margin expansion
+• Cash flow generation and capital allocation
+• Balance sheet strength and debt levels
+
+🏭 Business Analysis:
+• Competitive positioning in the industry
+• Market share dynamics and growth opportunities
+• Operational efficiency and cost management
+• Strategic initiatives and expansion plans
+
+🌍 Market Environment:
+• Industry outlook and regulatory changes
+• Economic factors affecting the business
+• Peer comparison and valuation metrics
+• Risk factors and mitigation strategies
+
+📊 Analyst Recommendations:
+• Consensus price targets and ratings
+• Recent research report highlights
+• Earnings estimate revisions
+• Long-term investment thesis
+
+🔮 Future Outlook:
+• Growth catalysts and investment drivers
+• Potential headwinds and challenges
+• Strategic roadmap and management guidance
+• ESG considerations and sustainability initiatives
+
+Note: This is placeholder content. The actual knowledge base will be populated with real analyst research, reports, and insights from our database when the API is implemented.
+      `
+      
+      setKnowledgeBaseData(placeholderData)
+    } catch (err) {
+      console.error('Error fetching knowledge base:', err)
+      setKnowledgeBaseData('Failed to load analyst knowledge base. Please try again later.')
+    } finally {
+      setKnowledgeBaseLoading(false)
+    }
+  }
+
+  const toggleKnowledgeBasePane = () => {
+    if (!knowledgeBasePaneOpen && !knowledgeBaseData) {
+      fetchKnowledgeBase()
+    }
+    setKnowledgeBasePaneOpen(!knowledgeBasePaneOpen)
   }
 
   if (loading) {
@@ -196,9 +338,48 @@ export default function CompanyDetailPage({ symbol, onBack }) {
         <button className="btn-secondary back-btn" onClick={onBack}>
           ← Return to Portfolio
         </button>
-        <h1 className="company-title">{companyData?.company_name || symbol}</h1>
-        <span className="company-symbol">{symbol}</span>
+        <div className="company-title-section">
+          <div>
+            <h1 className="company-title">{companyData?.company_name || symbol}</h1>
+            <span className="company-symbol">{symbol}</span>
+          </div>
+          <button 
+            className="btn-primary knowledge-base-btn" 
+            onClick={toggleKnowledgeBasePane}
+          >
+            📊 View Analyst Knowledge Base
+          </button>
+        </div>
       </div>
+
+      {/* Knowledge Base Side Pane */}
+      {knowledgeBasePaneOpen && (
+        <div className="knowledge-base-overlay" onClick={() => setKnowledgeBasePaneOpen(false)}>
+          <div className="knowledge-base-pane" onClick={(e) => e.stopPropagation()}>
+            <div className="knowledge-base-header">
+              <h3>Analyst Knowledge Base</h3>
+              <button 
+                className="close-pane-btn" 
+                onClick={() => setKnowledgeBasePaneOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="knowledge-base-content">
+              {knowledgeBaseLoading ? (
+                <div className="knowledge-base-loading">
+                  <div className="spinner"></div>
+                  <p>Loading analyst insights...</p>
+                </div>
+              ) : (
+                <div className="knowledge-base-text">
+                  <pre>{knowledgeBaseData}</pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {companyData?.error ? (
         <div className="error-message">
@@ -235,7 +416,7 @@ export default function CompanyDetailPage({ symbol, onBack }) {
             <div className="metric-card">
               <h3>Day Change</h3>
               <div className={`metric-value ${dayChangePositive ? 'positive' : ''} ${dayChangeNegative ? 'negative' : ''}`}>
-                ₹{fmtNum(companyData?.price)}
+                ₹{fmtNum(companyData?.price && companyData.price > 0 ? companyData.price : companyData?.close_price)}
               </div>
               <div className={`metric-subtitle ${dayChangePositive ? 'positive' : ''} ${dayChangeNegative ? 'negative' : ''}`}>
                 {dayChangePositive ? '+' : ''}₹{fmtNum(companyData?.day_change)} ({fmtPct(companyData?.day_change_percentage)})
@@ -370,10 +551,85 @@ export default function CompanyDetailPage({ symbol, onBack }) {
                     {/* Corporate Events Card */}
                     <div className="corporate-events-card">
                       <h3>Corporate Events & Announcements</h3>
+                      <div className="events-controls">
+                        <div className="events-filters">
+                          <button 
+                            className={`filter-btn ${eventsFilter === 30 ? 'active' : ''}`} 
+                            onClick={() => changeEventsFilter(30)} 
+                            disabled={eventsLoading}
+                          >
+                            Last 30 Days
+                          </button>
+                          <button 
+                            className={`filter-btn ${eventsFilter === 'all' ? 'active' : ''}`} 
+                            onClick={() => changeEventsFilter('all')} 
+                            disabled={eventsLoading}
+                          >
+                            All
+                          </button>
+                        </div>
+                      </div>
                       <div className="events-content">
-                        <p className="events-placeholder">
-                          Corporate events, earnings announcements, dividend declarations, and other important company updates will appear here.
-                        </p>
+                        {eventsLoading ? (
+                          <div className="events-loading">
+                            <p>Loading corporate events...</p>
+                          </div>
+                        ) : eventsData.length > 0 ? (
+                          <div className="events-list">
+                            {eventsData.map((event, index) => (
+                              <div key={event.id} className="news-row company-events-row" style={{ marginBottom: index < eventsData.length - 1 ? '16px' : '0' }}>
+                                <div className="event-header">
+                                  <div className="event-header-left">
+                                    <span className="event-type-tag">{event.event_type}</span>
+                                    <h4 className="event-title-inline">{event.description}</h4>
+                                  </div>
+                                  <span className="event-date">{new Date(event.event_date).toLocaleDateString()}</span>
+                                </div>
+                                
+
+                                
+                                <div className="event-links">
+                                  {event.url && (
+                                    <a 
+                                      href={event.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="event-link primary-link"
+                                    >
+                                      📊 View on BSE
+                                    </a>
+                                  )}
+                                  
+                                  {event.attachment_url && (
+                                    <a 
+                                      href={`https://www.bseindia.com/xml-data/corpfiling/AttachLive/${event.attachment_url}`} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer" 
+                                      className="event-link attachment-link"
+                                    >
+                                      📄 Download PDF
+                                    </a>
+                                  )}
+                                </div>
+                                
+                                {/* Fallback for older event format compatibility */}
+                                {event.record_date && (
+                                  <p className="event-detail">Record Date: {new Date(event.record_date).toLocaleDateString()}</p>
+                                )}
+                                {event.ex_date && (
+                                  <p className="event-detail">Ex-Date: {new Date(event.ex_date).toLocaleDateString()}</p>
+                                )}
+                                {event.eps && (
+                                  <p className="event-detail">EPS: {event.eps}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="events-placeholder">
+                            No corporate events found for the selected timeframe.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>

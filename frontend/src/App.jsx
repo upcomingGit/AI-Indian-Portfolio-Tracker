@@ -190,7 +190,7 @@ function App() {
       {/* Footer */}
       <footer className="site-footer">
         <div className="container">
-          <small>Made by Ankur Gupta</small>
+          <small>Made with ❤️ by Ankur Gupta</small>
         </div>
       </footer>
     </div>

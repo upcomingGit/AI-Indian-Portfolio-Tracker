@@ -1,15 +1,173 @@
 import os
 import asyncio
+import requests
+import re
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from mcp_manager import mcp_manager
+
+API_URL_LOOKUP = "https://api.bseindia.com/BseIndiaAPI/api/PeerSmartSearch/w"
+API_URL_ANNOUNCEMENTS = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
 
 
 class HoldingsResponse(BaseModel):
     holdings: List[Dict[str, Any]]
+
+
+class CorporateEventsResponse(BaseModel):
+    events: List[Dict[str, Any]]
+
+
+def lookup_scrip(scrip):
+    """Return scrip name if scrip is a BSE scrip code, or scrip code if name is given. Also parses and returns the BSE code if found."""
+    params = {"Type": "SS", "text": scrip}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept": "application/json, text/plain, */*",
+        "Origin": "https://www.bseindia.com/",
+        "Referer": "https://www.bseindia.com/",
+        "Connection": "keep-alive",
+    }
+    response = requests.get(API_URL_LOOKUP, params=params, headers=headers, timeout=10)
+    print(f"Raw Response: {response.text}")
+    response.raise_for_status()
+    html = response.text.replace("&nbsp;", " ")
+    # Try to extract the BSE code (last number in the <li> element)
+    match = re.search(r"liclick\('([0-9]+)'", html)
+    bse_code = match.group(1) if match else None
+    return {"html": html, "bse_code": bse_code}
+
+
+def get_segment_code(segment):
+    """Convert segment name to BSE API code"""
+    if segment == "equity":
+        return "C"
+    elif segment == "debt":
+        return "D"
+    elif segment == "mf_etf":
+        return "M"
+    else:
+        return "C"  # Default to equity
+
+
+async def fetch_bse_announcements(symbol: str, from_date: datetime, to_date: datetime) -> List[Dict[str, Any]]:
+    """
+    Fetch corporate announcements from BSE API for a given symbol
+    """
+    try:
+        # Use the lookup_scrip function to get BSE code dynamically
+        print(f"[BSE API] Looking up BSE code for symbol: {symbol}")
+        lookup_result = lookup_scrip(symbol)
+        scrip_code = lookup_result.get("bse_code")
+        
+        # If no scrip code found, return placeholder data
+        if not scrip_code:
+            print(f"[BSE API] No BSE code found for symbol: {symbol}")
+            return [
+                {
+                    "id": 1,
+                    "event_type": "General Announcement",
+                    "description": f"Corporate announcements for {symbol} will be available soon",
+                    "event_date": datetime.now().strftime("%Y-%m-%d"),
+                    "source": "BSE",
+                    "category": "General"
+                }
+            ]
+        
+        print(f"[BSE API] Found BSE code {scrip_code} for symbol {symbol}")
+        
+        params = {
+            "pageno": 1,
+            "strCat": "-1",  # All categories
+            "subcategory": "-1",  # All subcategories
+            "strPrevDate": from_date.strftime("%Y%m%d"),
+            "strToDate": to_date.strftime("%Y%m%d"),
+            "strSearch": "P",
+            "strscrip": scrip_code,
+            "strType": get_segment_code("equity"),
+        }
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Accept": "application/json, text/plain, */*",
+            "Origin": "https://www.bseindia.com/",
+            "Referer": "https://www.bseindia.com/",
+            "Connection": "keep-alive",
+        }
+        
+        # Make async request using requests (in production, use aiohttp)
+        import asyncio
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None, 
+            lambda: requests.get(API_URL_ANNOUNCEMENTS, params=params, headers=headers, timeout=10)
+        )
+        
+        if response.status_code != 200:
+            raise Exception(f"BSE API returned status {response.status_code}")
+            
+        data = response.json()
+        
+        # Parse and format the response
+        events = []
+        if isinstance(data, dict) and "Table" in data:
+            for item in data["Table"]:
+                # Parse the date properly - BSE returns datetime like "2025-09-01T11:01:17.15"
+                event_date = item.get("DT_TM", datetime.now().isoformat())
+                try:
+                    # Convert BSE datetime format to simple date
+                    if 'T' in event_date:
+                        event_date = event_date.split('T')[0]
+                except:
+                    event_date = datetime.now().strftime("%Y-%m-%d")
+                
+                event = {
+                    "id": len(events) + 1,
+                    "event_type": item.get("CATEGORYNAME", "General Announcement"),
+                    "description": item.get("HEADLINE", "Corporate announcement"),
+                    "event_date": event_date,
+                    "source": "BSE",
+                    "category": item.get("CATEGORYNAME", "General"),
+                    "subcategory": item.get("SUBCATNAME", ""),
+                    "url": item.get("NSURL", ""),
+                    "attachment_url": item.get("ATTACHMENTNAME", ""),
+                    # Additional fields that might be useful for frontend display
+                    "scrip_code": item.get("SCRIP_CD", ""),
+                    "company_name": item.get("SLONGNAME", ""),
+                    "news_id": item.get("NEWSID", ""),
+                    "dissemination_time": item.get("DissemDT", ""),
+                    "announcement_type": item.get("ANNOUNCEMENT_TYPE", "")
+                }
+                events.append(event)
+        
+        return events if events else [
+            {
+                "id": 1,
+                "event_type": "No Events",
+                "description": f"No corporate announcements found for {symbol} in the selected timeframe",
+                "event_date": datetime.now().strftime("%Y-%m-%d"),
+                "source": "BSE",
+                "category": "General"
+            }
+        ]
+        
+    except Exception as e:
+        print(f"[BSE API][ERROR] Failed to fetch announcements for {symbol}: {e}")
+        # Return placeholder data on error
+        return [
+            {
+                "id": 1,
+                "event_type": "Error",
+                "description": f"Unable to fetch corporate events for {symbol} at this time",
+                "event_date": datetime.now().strftime("%Y-%m-%d"),
+                "source": "System",
+                "category": "Error"
+            }
+        ]
 
 
 def create_app() -> FastAPI:
@@ -153,6 +311,36 @@ def create_app() -> FastAPI:
         except Exception as e:
             print(f"[MCP][HTTP][ERROR] /api/mcp/holdings failed: {e}")
             raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get("/api/corporate-events/{symbol}", response_model=CorporateEventsResponse)
+    async def get_corporate_events(symbol: str, filter_type: str = "30"):
+        """
+        Fetch corporate events/announcements for a given symbol.
+        filter_type: "30" for last 30 days, "all" for all available events
+        """
+        try:
+            print(f"[API][HTTP] GET /api/corporate-events/{symbol} - filter={filter_type}")
+            
+            # Determine date range
+            if filter_type == "all":
+                # Get events from last 1 year
+                from_date = datetime.now() - timedelta(days=365)
+                to_date = datetime.now()
+            else:
+                # Default to last 30 days
+                days = int(filter_type) if filter_type.isdigit() else 30
+                from_date = datetime.now() - timedelta(days=days)
+                to_date = datetime.now()
+            
+            events = await fetch_bse_announcements(symbol, from_date, to_date)
+            
+            print(f"[API][HTTP] GET /api/corporate-events/{symbol} - received {len(events)} events")
+            return {"events": events}
+            
+        except Exception as e:
+            print(f"[API][HTTP][ERROR] /api/corporate-events/{symbol} failed: {e}")
+            # Return empty events instead of error to avoid breaking frontend
+            return {"events": []}
 
     @app.on_event("shutdown")
     async def on_shutdown():

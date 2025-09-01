@@ -258,4 +258,181 @@
 	}
 }
 
+/* Company Title Section */
+.company-title-section {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	width: 100%;
+	gap: 1rem;
+}
+
+.knowledge-base-btn {
+	background: linear-gradient(135deg, #8b5cf6, #6366f1);
+	color: white;
+	border: none;
+	padding: 0.75rem 1.25rem;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 0.9rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	white-space: nowrap;
+	box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+}
+
+.knowledge-base-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Knowledge Base Pane */
+.knowledge-base-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 1000;
+	display: flex;
+	justify-content: flex-end;
+	animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+.knowledge-base-pane {
+	width: 50%;
+	max-width: 600px;
+	min-width: 400px;
+	height: 100vh;
+	background: var(--bg-1);
+	border-left: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	animation: slideIn 0.3s ease-out;
+	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideIn {
+	from { transform: translateX(100%); }
+	to { transform: translateX(0); }
+}
+
+.knowledge-base-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1.5rem;
+	border-bottom: 1px solid var(--line);
+	background: var(--bg-0);
+}
+
+.knowledge-base-header h3 {
+	margin: 0;
+	font-size: 1.3rem;
+	color: var(--text-0);
+	font-weight: 600;
+}
+
+.close-pane-btn {
+	background: none;
+	border: none;
+	font-size: 1.5rem;
+	color: var(--muted);
+	cursor: pointer;
+	padding: 0.5rem;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.close-pane-btn:hover {
+	background: rgba(255, 255, 255, 0.1);
+	color: var(--text-0);
+}
+
+.knowledge-base-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1.5rem;
+}
+
+.knowledge-base-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 200px;
+	gap: 1rem;
+}
+
+.spinner {
+	width: 40px;
+	height: 40px;
+	border: 4px solid rgba(139, 92, 246, 0.2);
+	border-top: 4px solid #8b5cf6;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+.knowledge-base-text {
+	line-height: 1.6;
+}
+
+.knowledge-base-text pre {
+	white-space: pre-wrap;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	font-size: 0.95rem;
+	color: var(--text-1);
+	margin: 0;
+	background: none;
+	border: none;
+	padding: 0;
+}
+
+/* Responsive adjustments for knowledge base */
+@media (max-width: 1024px) {
+	.knowledge-base-pane {
+		width: 60%;
+	}
+	
+	.company-title-section {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+	
+	.knowledge-base-btn {
+		align-self: flex-start;
+	}
+}
+
+@media (max-width: 768px) {
+	.knowledge-base-pane {
+		width: 80%;
+		min-width: 300px;
+	}
+}
+
+@media (max-width: 600px) {
+	.knowledge-base-pane {
+		width: 100%;
+		min-width: auto;
+	}
+	
+	.company-title-section {
+		align-items: center;
+		text-align: center;
+	}
+}
+
 /* Reverted custom news card styles to default (no overrides) */
