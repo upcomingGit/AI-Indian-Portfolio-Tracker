@@ -3,3 +3,6 @@ uvicorn
 pydantic
 fastmcp
 requests
+google-genai
+yfinance
+pandas

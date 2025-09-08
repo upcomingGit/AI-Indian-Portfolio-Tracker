@@ -9,6 +9,8 @@ export default function CompanyDetailPage({ symbol, onBack }) {
   const [eventsFilter, setEventsFilter] = useState(30) // 30 days or 'all'
   const [eventsData, setEventsData] = useState([])
   const [eventsLoading, setEventsLoading] = useState(false)
+  const [eventsCurrentPage, setEventsCurrentPage] = useState(1)
+  const [eventsPerPage] = useState(5) // Show 5 events per page
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState('daily') // daily, quarterly, yearly
   const [activeQuarter, setActiveQuarter] = useState('Q1-2024') // for quarterly tab
@@ -234,6 +236,7 @@ export default function CompanyDetailPage({ symbol, onBack }) {
 
   const changeEventsFilter = async (filter) => {
     setEventsFilter(filter)
+    setEventsCurrentPage(1) // Reset to first page when filter changes
     await fetchCorporateEvents(filter)
   }
 
@@ -575,56 +578,95 @@ Note: This is placeholder content. The actual knowledge base will be populated w
                             <p>Loading corporate events...</p>
                           </div>
                         ) : eventsData.length > 0 ? (
-                          <div className="events-list">
-                            {eventsData.map((event, index) => (
-                              <div key={event.id} className="news-row company-events-row" style={{ marginBottom: index < eventsData.length - 1 ? '16px' : '0' }}>
-                                <div className="event-header">
-                                  <div className="event-header-left">
-                                    <span className="event-type-tag">{event.event_type}</span>
-                                    <h4 className="event-title-inline">{event.description}</h4>
+                          <>
+                            <div className="events-list">
+                              {(() => {
+                                // Calculate pagination
+                                const totalEvents = eventsData.length
+                                const totalPages = Math.ceil(totalEvents / eventsPerPage)
+                                const startIndex = (eventsCurrentPage - 1) * eventsPerPage
+                                const endIndex = startIndex + eventsPerPage
+                                const currentEvents = eventsData.slice(startIndex, endIndex)
+                                
+                                return currentEvents.map((event, index) => (
+                                  <div key={event.id} className="news-row company-events-row" style={{ marginBottom: index < currentEvents.length - 1 ? '16px' : '0' }}>
+                                    <div className="event-header">
+                                      <div className="event-header-left">
+                                        <span className="event-type-tag">{event.event_type}</span>
+                                        <h4 className="event-title-inline">{event.description}</h4>
+                                      </div>
+                                      <span className="event-date">{new Date(event.event_date).toLocaleDateString()}</span>
+                                    </div>
+                                    
+                                    <div className="event-links">
+                                      {event.url && (
+                                        <a 
+                                          href={event.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className="event-link primary-link"
+                                        >
+                                          📊 View on BSE
+                                        </a>
+                                      )}
+                                      
+                                      {event.attachment_url && (
+                                        <a 
+                                          href={`https://www.bseindia.com/xml-data/corpfiling/AttachLive/${event.attachment_url}`} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className="event-link attachment-link"
+                                        >
+                                          📄 Download PDF
+                                        </a>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Fallback for older event format compatibility */}
+                                    {event.record_date && (
+                                      <p className="event-detail">Record Date: {new Date(event.record_date).toLocaleDateString()}</p>
+                                    )}
+                                    {event.ex_date && (
+                                      <p className="event-detail">Ex-Date: {new Date(event.ex_date).toLocaleDateString()}</p>
+                                    )}
+                                    {event.eps && (
+                                      <p className="event-detail">EPS: {event.eps}</p>
+                                    )}
                                   </div>
-                                  <span className="event-date">{new Date(event.event_date).toLocaleDateString()}</span>
+                                ))
+                              })()}
+                            </div>
+                            
+                            {/* Pagination Controls */}
+                            {eventsData.length > eventsPerPage && (
+                              <div className="events-pagination">
+                                <div className="pagination-info">
+                                  Showing {Math.min((eventsCurrentPage - 1) * eventsPerPage + 1, eventsData.length)} - {Math.min(eventsCurrentPage * eventsPerPage, eventsData.length)} of {eventsData.length} events
                                 </div>
-                                
-
-                                
-                                <div className="event-links">
-                                  {event.url && (
-                                    <a 
-                                      href={event.url} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      className="event-link primary-link"
-                                    >
-                                      📊 View on BSE
-                                    </a>
-                                  )}
+                                <div className="pagination-controls">
+                                  <button
+                                    className="pagination-btn"
+                                    onClick={() => setEventsCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={eventsCurrentPage === 1}
+                                  >
+                                    ← Previous
+                                  </button>
                                   
-                                  {event.attachment_url && (
-                                    <a 
-                                      href={`https://www.bseindia.com/xml-data/corpfiling/AttachLive/${event.attachment_url}`} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer" 
-                                      className="event-link attachment-link"
-                                    >
-                                      📄 Download PDF
-                                    </a>
-                                  )}
+                                  <span className="pagination-pages">
+                                    Page {eventsCurrentPage} of {Math.ceil(eventsData.length / eventsPerPage)}
+                                  </span>
+                                  
+                                  <button
+                                    className="pagination-btn"
+                                    onClick={() => setEventsCurrentPage(prev => Math.min(prev + 1, Math.ceil(eventsData.length / eventsPerPage)))}
+                                    disabled={eventsCurrentPage === Math.ceil(eventsData.length / eventsPerPage)}
+                                  >
+                                    Next →
+                                  </button>
                                 </div>
-                                
-                                {/* Fallback for older event format compatibility */}
-                                {event.record_date && (
-                                  <p className="event-detail">Record Date: {new Date(event.record_date).toLocaleDateString()}</p>
-                                )}
-                                {event.ex_date && (
-                                  <p className="event-detail">Ex-Date: {new Date(event.ex_date).toLocaleDateString()}</p>
-                                )}
-                                {event.eps && (
-                                  <p className="event-detail">EPS: {event.eps}</p>
-                                )}
                               </div>
-                            ))}
-                          </div>
+                            )}
+                          </>
                         ) : (
                           <p className="events-placeholder">
                             No corporate events found for the selected timeframe.

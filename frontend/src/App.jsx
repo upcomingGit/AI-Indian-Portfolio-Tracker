@@ -2,6 +2,7 @@ import './App.css'
 import { useEffect, useState } from 'react'
 import AnalysePage from './pages/AnalysePage'
 import CompanyDetailPage from './pages/CompanyDetailPage'
+import ResearchPage from './pages/ResearchPage'
 
 function App() {
   const [route, setRoute] = useState('home')
@@ -44,6 +45,8 @@ function App() {
     const path = window.location.pathname
     if (path === '/coming-soon') {
       setRoute('coming-soon')
+    } else if (path === '/research') {
+      setRoute('research')
     } else if (path === '/analyse') {
       setRoute('analyse')
     } else if (path.startsWith('/company/')) {
@@ -60,6 +63,8 @@ function App() {
       const p = window.location.pathname
       if (p === '/coming-soon') {
         setRoute('coming-soon')
+      } else if (p === '/research') {
+        setRoute('research')
       } else if (p === '/analyse') {
         setRoute('analyse')
       } else if (p.startsWith('/company/')) {
@@ -77,6 +82,8 @@ function App() {
   const navigateTo = (r, symbol = null) => {
     if (r === 'coming-soon') {
       window.history.pushState({}, '', '/coming-soon')
+    } else if (r === 'research') {
+      window.history.pushState({}, '', '/research')
     } else if (r === 'analyse') {
       window.history.pushState({}, '', '/analyse')
     } else if (r === 'company-detail' && symbol) {
@@ -105,13 +112,13 @@ function App() {
             <p className="subtitle">Use the power of AI to research new companies or keep track of your existing companies</p>
 
             <div className="cards-grid">
-              {/* Card 1 - navigates to Coming Soon */}
+              {/* Card 1 - navigates to Research */}
               <div
                 className="card feature-card"
                 role="button"
                 tabIndex={0}
-                onClick={() => navigateTo('coming-soon')}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { navigateTo('coming-soon') } }}
+                onClick={() => navigateTo('research')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { navigateTo('research') } }}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="icon-container">
@@ -166,6 +173,13 @@ function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {route === 'research' && (
+          <ResearchPage 
+            onBack={() => navigateTo('home')}
+            onCompanySelect={(symbol) => navigateTo('company-detail', symbol)}
+          />
         )}
 
         {route === 'analyse' && (
