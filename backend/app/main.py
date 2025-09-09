@@ -170,6 +170,195 @@ async def fetch_bse_announcements(symbol: str, from_date: datetime, to_date: dat
         ]
 
 
+def parse_thesis_content(content: str) -> Dict[str, Any]:
+    """
+    Parse thesis markdown content into structured data with comprehensive section extraction
+    """
+    try:
+        # Extract executive summary
+        executive_summary = ""
+        summary_match = re.search(r'### 1\. Executive Summary\n\n(.*?)(?=\n###|\n## |$)', content, re.DOTALL)
+        if summary_match:
+            executive_summary = summary_match.group(1).strip()
+        
+        # Extract metric-by-metric evaluation table
+        metrics = {}
+        metrics_section_match = re.search(r'### 2\. Metric-by-Metric Evaluation(.*?)(?=\n### 3\.|\n###|\n## |$)', content, re.DOTALL)
+        if metrics_section_match:
+            metrics_content = metrics_section_match.group(1)
+            # Parse the markdown table
+            table_rows = re.findall(r'\|([^|]+)\|([^|]+)\|([^|]+)\|', metrics_content)
+            
+            current_category = "General"
+            for row in table_rows:
+                if len(row) >= 3:
+                    metric_name = row[0].strip()
+                    score = row[1].strip()
+                    justification = row[2].strip()
+                    
+                    # Skip header rows
+                    if metric_name.lower() in ['metric', 'category'] or '---' in metric_name:
+                        continue
+                    
+                    # Check if this is a category header (has ** around it)
+                    if metric_name.startswith('**') and metric_name.endswith('**'):
+                        current_category = metric_name.replace('**', '').strip()
+                        if current_category not in metrics:
+                            metrics[current_category] = {}
+                        continue
+                    
+                    # Parse score emoji and text
+                    score_clean = score
+                    if '🟢' in score:
+                        score_clean = 'High'
+                    elif '🟡' in score:
+                        score_clean = 'Medium'  
+                    elif '🔴' in score or '❌' in score:
+                        score_clean = 'Low'
+                    elif '✅' in score:
+                        score_clean = 'High'
+                    
+                    # Clean up score text
+                    score_clean = re.sub(r'[🟢🟡🔴❌✅]', '', score_clean).strip()
+                    if not score_clean:
+                        if '🟢' in score or '✅' in score:
+                            score_clean = 'High'
+                        elif '🟡' in score:
+                            score_clean = 'Medium'
+                        else:
+                            score_clean = 'Low'
+                    
+                    if current_category not in metrics:
+                        metrics[current_category] = {}
+                    
+                    metrics[current_category][metric_name] = {
+                        "score": score_clean,
+                        "justification": justification
+                    }
+        
+        # Extract decision matrix table
+        decision_matrix = {}
+        matrix_section_match = re.search(r'### 3\. Decision Matrix(.*?)(?=\n### 4\.|\n###|\n## |$)', content, re.DOTALL)
+        if matrix_section_match:
+            matrix_content = matrix_section_match.group(1)
+            table_rows = re.findall(r'\|([^|]+)\|([^|]+)\|([^|]+)\|', matrix_content)
+            
+            for row in table_rows:
+                if len(row) >= 3:
+                    category = row[0].strip()
+                    score = row[1].strip()
+                    justification = row[2].strip()
+                    
+                    # Skip header rows
+                    if category.lower() in ['category', 'score'] or '---' in category:
+                        continue
+                    
+                    # Clean up category name (remove bold formatting)
+                    category_clean = re.sub(r'\*\*([^*]+)\*\*', r'\1', category).strip()
+                    
+                    # Parse score emoji and text
+                    score_clean = score
+                    if '🟢' in score:
+                        score_clean = 'High'
+                    elif '🟡' in score:
+                        score_clean = 'Medium'
+                    elif '🔴' in score or '❌' in score:
+                        score_clean = 'Low'
+                    elif '✅' in score:
+                        score_clean = 'High'
+                    
+                    # Clean up score text
+                    score_clean = re.sub(r'[🟢🟡🔴❌✅]', '', score_clean).strip()
+                    if not score_clean:
+                        if '🟢' in score or '✅' in score:
+                            score_clean = 'High'
+                        elif '🟡' in score:
+                            score_clean = 'Medium'
+                        else:
+                            score_clean = 'Low'
+                    
+                    decision_matrix[category_clean] = {
+                        "score": score_clean,
+                        "justification": justification
+                    }
+        
+        # Extract final verdict section with comprehensive parsing
+        recommendation = "Unknown"
+        rec_summary = ""
+        caveats = []
+        
+        verdict_section_match = re.search(r'### 4\. Final Verdict(.*?)(?=\n---|\n###|\n## |$)', content, re.DOTALL)
+        if verdict_section_match:
+            verdict_content = verdict_section_match.group(1)
+            
+            # Extract recommendation
+            rec_match = re.search(r'\*\*Recommendation:\s*([^*\n]+)\*\*', verdict_content)
+            if rec_match:
+                recommendation = rec_match.group(1).strip()
+            
+            # Extract main recommendation summary (text after recommendation but before caveats)
+            rec_summary_match = re.search(r'\*\*Recommendation:[^*]+\*\*\n\n(.*?)(?=\n\*\*Caveats|$)', verdict_content, re.DOTALL)
+            if rec_summary_match:
+                rec_summary = rec_summary_match.group(1).strip()
+            
+            # Extract caveats with better parsing
+            caveats_match = re.search(r'\*\*Caveats:\*\*\n(.*?)(?=Despite these caveats|$)', verdict_content, re.DOTALL)
+            if caveats_match:
+                caveats_text = caveats_match.group(1).strip()
+                # Parse caveats by numbered list
+                caveat_lines = caveats_text.split('\n')
+                current_caveat = ""
+                
+                for line in caveat_lines:
+                    line = line.strip()
+                    if not line:
+                        if current_caveat:
+                            caveats.append(current_caveat.strip())
+                            current_caveat = ""
+                        continue
+                    
+                    # Check if it's a new caveat (starts with number)
+                    if re.match(r'^\d+\.\s+\*\*', line):
+                        if current_caveat:
+                            caveats.append(current_caveat.strip())
+                        # Clean the line of formatting - remove number, bullets, and bold markdown
+                        current_caveat = re.sub(r'^\d+\.\s+\*\*([^*]+)\*\*:', r'\1', line).strip()
+                    else:
+                        current_caveat += " " + line
+                
+                if current_caveat:
+                    caveats.append(current_caveat.strip())
+        
+        # Extract generated timestamp
+        generated_at = None
+        timestamp_match = re.search(r'Analysis generated on (\d{4}-\d{2}-\d{2})', content)
+        if timestamp_match:
+            generated_at = timestamp_match.group(1)
+        
+        return {
+            "executiveSummary": executive_summary,
+            "recommendation": recommendation,
+            "recommendationSummary": rec_summary,
+            "caveats": caveats,
+            "generatedAt": generated_at,
+            "metrics": metrics,
+            "decisionMatrix": decision_matrix
+        }
+    except Exception as e:
+        print(f"Error parsing thesis content: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "executiveSummary": "Analysis content could not be parsed",
+            "recommendation": "Unknown", 
+            "recommendationSummary": "Please refer to the original thesis document",
+            "caveats": [],
+            "generatedAt": None,
+            "metrics": {},
+            "decisionMatrix": {}
+        }
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="InvestR MCP Bridge", version="0.1.0")
 
@@ -341,6 +530,49 @@ def create_app() -> FastAPI:
             print(f"[API][HTTP][ERROR] /api/corporate-events/{symbol} failed: {e}")
             # Return empty events instead of error to avoid breaking frontend
             return {"events": []}
+
+    @app.get("/api/thesis/{symbol}")
+    async def get_thesis_analysis(symbol: str):
+        """
+        Fetch investment thesis analysis for a given symbol
+        """
+        try:
+            print(f"[API][HTTP] GET /api/thesis/{symbol}")
+            
+            # Map symbol to company name
+            company_names = {
+                "TINNARUBR": "Tinna Rubber & Infrastructure Ltd.",
+                "WONDERLA": "Wonderla Holidays Ltd."
+            }
+            
+            company_name = company_names.get(symbol)
+            if not company_name:
+                raise HTTPException(status_code=404, detail=f"No analysis available for {symbol}")
+            
+            # Read the thesis markdown file
+            thesis_file = f"{symbol}_Thesis.md"
+            thesis_path = os.path.join(os.path.dirname(__file__), thesis_file)
+            
+            if not os.path.exists(thesis_path):
+                raise HTTPException(status_code=404, detail=f"Thesis file not found for {symbol}")
+            
+            with open(thesis_path, 'r', encoding='utf-8') as f:
+                thesis_content = f.read()
+            
+            # Parse the thesis content into structured data
+            parsed_thesis = parse_thesis_content(thesis_content)
+            
+            return {
+                "symbol": symbol,
+                "companyName": company_name,
+                "thesis": parsed_thesis
+            }
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"[API][HTTP][ERROR] /api/thesis/{symbol} failed: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.on_event("shutdown")
     async def on_shutdown():

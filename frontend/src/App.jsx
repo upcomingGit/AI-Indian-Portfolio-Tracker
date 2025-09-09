@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import AnalysePage from './pages/AnalysePage'
 import CompanyDetailPage from './pages/CompanyDetailPage'
 import ResearchPage from './pages/ResearchPage'
+import CompanyAnalysisPage from './pages/CompanyAnalysisPage'
 
 function App() {
   const [route, setRoute] = useState('home')
@@ -53,6 +54,10 @@ function App() {
       const symbol = path.split('/company/')[1]
       setSelectedCompany(symbol)
       setRoute('company-detail')
+    } else if (path.startsWith('/analysis/')) {
+      const symbol = path.split('/analysis/')[1]
+      setSelectedCompany(symbol)
+      setRoute('company-analysis')
     } else {
       setRoute('home')
     }
@@ -71,6 +76,10 @@ function App() {
         const symbol = p.split('/company/')[1]
         setSelectedCompany(symbol)
         setRoute('company-detail')
+      } else if (p.startsWith('/analysis/')) {
+        const symbol = p.split('/analysis/')[1]
+        setSelectedCompany(symbol)
+        setRoute('company-analysis')
       } else {
         setRoute('home')
       }
@@ -88,6 +97,9 @@ function App() {
       window.history.pushState({}, '', '/analyse')
     } else if (r === 'company-detail' && symbol) {
       window.history.pushState({}, '', `/company/${symbol}`)
+      setSelectedCompany(symbol)
+    } else if (r === 'company-analysis' && symbol) {
+      window.history.pushState({}, '', `/analysis/${symbol}`)
       setSelectedCompany(symbol)
     } else {
       window.history.pushState({}, '', '/')
@@ -178,7 +190,7 @@ function App() {
         {route === 'research' && (
           <ResearchPage 
             onBack={() => navigateTo('home')}
-            onCompanySelect={(symbol) => navigateTo('company-detail', symbol)}
+            onCompanySelect={(symbol) => navigateTo('company-analysis', symbol)}
           />
         )}
 
@@ -197,6 +209,13 @@ function App() {
           <CompanyDetailPage 
             symbol={selectedCompany}
             onBack={() => navigateTo('analyse')}
+          />
+        )}
+
+        {route === 'company-analysis' && selectedCompany && (
+          <CompanyAnalysisPage 
+            symbol={selectedCompany}
+            onBack={() => navigateTo('research')}
           />
         )}
       </main>
