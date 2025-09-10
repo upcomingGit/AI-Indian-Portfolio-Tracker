@@ -46,10 +46,19 @@ const DecisionItem = memo(({ category, score, justification }) => (
 ))
 
 const CATEGORY_LABELS = {
-  financialMetrics: 'Financial Metrics',
-  generalMetrics: 'General Metrics',
-  industryMetrics: 'Industry Metrics',
-  managementStrategyMetrics: 'Management & Strategy Metrics'
+  // Handle backend parser output format (with emojis and spaces)
+  '📊 Financial Metrics': 'Financial Metrics',
+  'Financial Metrics': 'Financial Metrics',
+  'financialMetrics': 'Financial Metrics',
+  '🧾 Scutlebutt Metrics': 'Scutlebutt Metrics', 
+  'Scutlebutt Metrics': 'Scutlebutt Metrics',
+  'generalMetrics': 'Scutlebutt Metrics',
+  '🏭 Industry Metrics': 'Industry Metrics',
+  'Industry Metrics': 'Industry Metrics', 
+  'industryMetrics': 'Industry Metrics',
+  '👥 Management & Strategy Metrics': 'Management & Strategy Metrics',
+  'Management & Strategy Metrics': 'Management & Strategy Metrics',
+  'managementStrategyMetrics': 'Management & Strategy Metrics'
 }
 
 const CompanyAnalysisPage = memo(({ symbol, onBack }) => {
@@ -86,9 +95,15 @@ const CompanyAnalysisPage = memo(({ symbol, onBack }) => {
         metricName,
         ...metricData
       }))
+      
+      // Normalize category key for label lookup
+      const normalizedKey = categoryKey
+        .replace(/[📊🧾🏭👥]/g, '') // Remove emoji prefixes
+        .trim()
+        
       categoryMetrics.push({
         key: categoryKey,
-        label: CATEGORY_LABELS[categoryKey] || CATEGORY_LABELS[categoryKey.toLowerCase()] || CATEGORY_LABELS[categoryKey.replace(/([A-Z])/g, l => l.toLowerCase())] || CATEGORY_LABELS[categoryKey] || categoryKey,
+        label: CATEGORY_LABELS[categoryKey] || CATEGORY_LABELS[normalizedKey] || normalizedKey,
         metrics: metricsArray
       })
     })
@@ -167,9 +182,15 @@ const CompanyAnalysisPage = memo(({ symbol, onBack }) => {
         <div className="error-state">
           <h2>Analysis Unavailable</h2>
           <p>Sorry, we couldn't load the investment analysis for this company.</p>
-          <button className="btn-secondary" onClick={onBack}>
-            ← Back to Research
-          </button>
+          {/* If symbol is missing (page refresh or navigation), show a helpful hint */}
+          {!symbol ? (
+            <>
+              <p className="muted">It looks like the page was refreshed — please reopen the company from Research to view its analysis.</p>
+              <button className="btn-secondary" onClick={onBack}>← Back to Research</button>
+            </>
+          ) : (
+            <button className="btn-secondary" onClick={onBack}>← Back to Research</button>
+          )}
         </div>
       </div>
     )
@@ -198,9 +219,9 @@ const CompanyAnalysisPage = memo(({ symbol, onBack }) => {
         <button className="btn-back" onClick={onBack}>
           ← Back to Research
         </button>
-        <div className="company-header">
-          <h1 className="company-title">{analysisData.companyName}</h1>
-          <div className="company-symbol">{symbol}</div>
+        <div className="company-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', width: '100%', textAlign: 'center' }}>
+          <h1 className="company-title" style={{ margin: 0 }}>{analysisData.companyName}</h1>
+          <div className="company-symbol" style={{ fontSize: '1.2rem', marginTop: '2px' }}>{symbol}</div>
         </div>
       </div>
 
@@ -208,20 +229,35 @@ const CompanyAnalysisPage = memo(({ symbol, onBack }) => {
       <div className="quick-summary">
         <div className="summary-card">
           <h3>Executive Summary</h3>
-          <p>{processedData.executiveSummary}</p>
+          <p dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(processedData.executiveSummary) }} />
         </div>
         <div className="recommendation-card">
-          <div className={`recommendation-badge ${processedData.recommendation?.toLowerCase()}`}>
+          <div className={`recommendation-badge ${processedData.recommendation === 'Conditional Invest' ? 'conditional' : processedData.recommendation?.toLowerCase()}`}>
             {processedData.recommendation === 'Invest' && '✅'}
             {processedData.recommendation === 'Hold' && '⏸️'}
             {processedData.recommendation === 'Avoid' && '❌'}
+            {processedData.recommendation === 'Conditional Invest' && '⚠️'}
             {processedData.recommendation}
           </div>
           <p>{processedData.recommendationSummary}</p>
         </div>
       </div>
 
-      {/* Decision Matrix */}
+      {/* Caveats */}
+      {processedData.caveats.length > 0 && (
+        <div className="caveats-section">
+          <h2 className="section-title">Key Risks & Considerations</h2>
+          <div className="caveats-list">
+            {processedData.caveats.map((caveat, index) => {
+              return (
+                <div key={index} className="caveat-item" dangerouslySetInnerHTML={{ __html: '⚠️ ' + renderInlineMarkdown(caveat) }} />
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* : trix */}
       <div className="decision-section">
         <h2 className="section-title">Decision Matrix</h2>
         <div className="decision-list">
@@ -278,20 +314,6 @@ const CompanyAnalysisPage = memo(({ symbol, onBack }) => {
           </div>
         )}
       </div>
-
-      {/* Caveats */}
-      {processedData.caveats.length > 0 && (
-        <div className="caveats-section">
-          <h2 className="section-title">Key Risks & Considerations</h2>
-          <div className="caveats-list">
-            {processedData.caveats.map((caveat, index) => {
-              return (
-                <div key={index} className="caveat-item" dangerouslySetInnerHTML={{ __html: '⚠️ ' + renderInlineMarkdown(caveat) }} />
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Metadata */}
       {processedData.generatedAt && (

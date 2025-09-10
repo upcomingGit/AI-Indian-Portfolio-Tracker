@@ -950,3 +950,68 @@ body {
     justify-content: center;
   }
 }
+
+/* Ultra-compact mobile refinements (phones) */
+@media (max-width: 560px) {
+  html { font-size: 115%; }
+  .container { padding: 0.85rem 0.9rem; box-sizing: border-box; }
+  /* Ensure analyse container spans full viewport width (no 95vw causing fractional rounding) */
+  .container.analyse-page { width: 100vw; max-width: 100vw; }
+  /* Prevent horizontal body scroll while allowing internal scrollers */
+  body { overflow-x: hidden; }
+  .analyse-page { padding: 2.5rem 0 4rem; }
+  .analyse-page .analyse-header { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .analyse-page .analyse-actions { width: 100%; flex-wrap: wrap; justify-content: stretch; }
+  .analyse-page .analyse-actions .btn-primary { flex: 1 1 auto; width: 100%; }
+  /* Table containment: ensure no left overflow, allow horizontal scroll if required */
+  .portfolio-table-full { margin-top: 2.5rem; width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0.25rem 0.25rem 0.35rem; box-sizing: border-box; }
+  .portfolio-table-full::-webkit-scrollbar { height: 6px; }
+  .portfolio-table-full::-webkit-scrollbar-track { background: transparent; }
+  .portfolio-table-full::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+  /* Avoid table pushing past viewport: prevent min-width side-effects */
+  .portfolio-table { margin: 0; }
+  .analyse-portfolio-table { width: 100%; }
+  .analyse-portfolio-table th, .analyse-portfolio-table td { padding: 0.55rem 0.6rem; font-size: 0.8rem; }
+  /* Allow wrapping inside cells so table width shrinks when possible */
+  .portfolio-table td, .portfolio-table th { white-space: normal; word-break: break-word; }
+  /* If extremely wide still, clamp min width and enable internal scroll without shifting container */
+  .portfolio-table { table-layout: auto; }
+  /* Prevent left-edge clipping if any parent sets negative margins */
+  body, .page, .analyse-page, .portfolio-table-full, .portfolio-card { margin-left: 0 !important; }
+  .news-summary { margin-top: 3.5rem; }
+  .news-summary .news-title { font-size: 1.55rem; }
+  .news-filters { flex-wrap: wrap; }
+  .filter-btn { padding: 0.4rem 0.55rem; font-size: 0.7rem; }
+  .sentiment-tag { font-size: 0.65rem; }
+  .news-row { padding: 0.65rem 0.65rem 0.7rem; }
+  .news-paragraph { font-size: 0.78rem; line-height: 1.35; }
+  /* Holdings mobile card list */
+  .holdings-mobile-list { display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); gap: 0.65rem; margin-top: 2.75rem; }
+  .holding-card { 
+    text-align: left;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 0.65rem 0.6rem 0.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    cursor: pointer;
+    transition: background 140ms ease, transform 120ms ease;
+    font: inherit;
+    color: var(--text-0);
+  }
+  .holding-card:active { transform: scale(.985); }
+  .holding-card:hover { background: rgba(139,92,246,0.15); }
+  .holding-card-row { display: flex; justify-content: space-between; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+  .holding-card-row.top { font-weight: 600; font-size: 0.85rem; }
+  .holding-card-row .symbol { color: var(--purple-300); font-weight: 700; letter-spacing: .25px; }
+  .holding-card-row.metrics { font-size: 0.67rem; text-transform: uppercase; letter-spacing: .5px; opacity:.9; }
+  .holding-card-row.metrics span { flex: 1 1 auto; min-width: 45%; }
+  .holding-card-row.delta { font-size: 0.63rem; font-weight: 600; }
+  .holding-card .pnl { font-size: 0.7rem; }
+  .holding-card .pnl.positive, .delta-val.positive { color: #22c55e; }
+  .holding-card .pnl.negative, .delta-val.negative { color: #ef4444; }
+  /* Provide subtle shadow only when user scrolls (avoid cost) */
+  .holdings-mobile-list:has(.holding-card:hover) .holding-card:hover { box-shadow: 0 4px 10px -2px rgba(0,0,0,0.35); }
+}

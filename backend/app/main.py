@@ -7,11 +7,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
+from dotenv import load_dotenv
 
 from mcp_manager import mcp_manager
 
-API_URL_LOOKUP = "https://api.bseindia.com/BseIndiaAPI/api/PeerSmartSearch/w"
-API_URL_ANNOUNCEMENTS = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
+# Load environment variables
+load_dotenv()
+
+# API URLs from environment variables
+API_URL_LOOKUP = os.getenv("BSE_API_URL_LOOKUP", "https://api.bseindia.com/BseIndiaAPI/api/PeerSmartSearch/w")
+API_URL_ANNOUNCEMENTS = os.getenv("BSE_API_URL_ANNOUNCEMENTS", "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w")
+BSE_ORIGIN = os.getenv("BSE_ORIGIN", "https://www.bseindia.com/")
+BSE_REFERER = os.getenv("BSE_REFERER", "https://www.bseindia.com/")
 
 
 class HoldingsResponse(BaseModel):
@@ -24,12 +31,13 @@ class CorporateEventsResponse(BaseModel):
 
 def lookup_scrip(scrip):
     """Return scrip name if scrip is a BSE scrip code, or scrip code if name is given. Also parses and returns the BSE code if found."""
+    print(f"[BSE API] Starting lookup for scrip: {scrip}")
     params = {"Type": "SS", "text": scrip}
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "Accept": "application/json, text/plain, */*",
-        "Origin": "https://www.bseindia.com/",
-        "Referer": "https://www.bseindia.com/",
+        "Origin": BSE_ORIGIN,
+        "Referer": BSE_REFERER,
         "Connection": "keep-alive",
     }
     response = requests.get(API_URL_LOOKUP, params=params, headers=headers, timeout=10)
@@ -58,6 +66,7 @@ async def fetch_bse_announcements(symbol: str, from_date: datetime, to_date: dat
     """
     Fetch corporate announcements from BSE API for a given symbol
     """
+    print(f"[BSE API] Starting fetch for symbol: {symbol}, from: {from_date.date()}, to: {to_date.date()}")
     try:
         # Use the lookup_scrip function to get BSE code dynamically
         print(f"[BSE API] Looking up BSE code for symbol: {symbol}")
@@ -94,8 +103,8 @@ async def fetch_bse_announcements(symbol: str, from_date: datetime, to_date: dat
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
             "Accept": "application/json, text/plain, */*",
-            "Origin": "https://www.bseindia.com/",
-            "Referer": "https://www.bseindia.com/",
+            "Origin": BSE_ORIGIN,
+            "Referer": BSE_REFERER,
             "Connection": "keep-alive",
         }
         
@@ -174,16 +183,17 @@ def parse_thesis_content(content: str) -> Dict[str, Any]:
     """
     Parse thesis markdown content into structured data with comprehensive section extraction
     """
+    print("[THESIS PARSER] Starting to parse thesis content")
     try:
         # Extract executive summary
         executive_summary = ""
-        summary_match = re.search(r'### 1\. Executive Summary\n\n(.*?)(?=\n###|\n## |$)', content, re.DOTALL)
+        summary_match = re.search(r'#{2,3} 1\. Executive Summary\n\n(.*?)(?=\n###|\n## |$)', content, re.DOTALL)
         if summary_match:
             executive_summary = summary_match.group(1).strip()
         
         # Extract metric-by-metric evaluation table
         metrics = {}
-        metrics_section_match = re.search(r'### 2\. Metric-by-Metric Evaluation(.*?)(?=\n### 3\.|\n###|\n## |$)', content, re.DOTALL)
+        metrics_section_match = re.search(r'#{2,3} 2\. Metric-by-Metric Evaluation(.*?)(?=\n#{2,3} 3\.|\n#{2,3}|\n## |$)', content, re.DOTALL)
         if metrics_section_match:
             metrics_content = metrics_section_match.group(1)
             # Parse the markdown table
@@ -238,7 +248,7 @@ def parse_thesis_content(content: str) -> Dict[str, Any]:
         
         # Extract decision matrix table
         decision_matrix = {}
-        matrix_section_match = re.search(r'### 3\. Decision Matrix(.*?)(?=\n### 4\.|\n###|\n## |$)', content, re.DOTALL)
+        matrix_section_match = re.search(r'#{2,3} 3\. Decision Matrix(.*?)(?=\n#{2,3} 4\.|\n#{2,3}|\n## |$)', content, re.DOTALL)
         if matrix_section_match:
             matrix_content = matrix_section_match.group(1)
             table_rows = re.findall(r'\|([^|]+)\|([^|]+)\|([^|]+)\|', matrix_content)
@@ -287,54 +297,74 @@ def parse_thesis_content(content: str) -> Dict[str, Any]:
         rec_summary = ""
         caveats = []
         
-        verdict_section_match = re.search(r'### 4\. Final Verdict(.*?)(?=\n---|\n###|\n## |$)', content, re.DOTALL)
+        verdict_section_match = re.search(r'#{2,3} 4\. Final Verdict(.*?)(?=\n---|\n#{2,3}|\n## |$)', content, re.DOTALL)
         if verdict_section_match:
             verdict_content = verdict_section_match.group(1)
             
             # Extract recommendation
-            rec_match = re.search(r'\*\*Recommendation:\s*([^*\n]+)\*\*', verdict_content)
+            rec_match = re.search(r'\*\*Recommendation:\*\*\s*([^\n]+)', verdict_content)
             if rec_match:
                 recommendation = rec_match.group(1).strip()
             
             # Extract main recommendation summary (text after recommendation but before caveats)
-            rec_summary_match = re.search(r'\*\*Recommendation:[^*]+\*\*\n\n(.*?)(?=\n\*\*Caveats|$)', verdict_content, re.DOTALL)
+            rec_summary_match = re.search(r'\*\*Recommendation:\*\*\s*[^\n]+\n\n(.*?)(?=\n\*\*Caveats|$)', verdict_content, re.DOTALL)
             if rec_summary_match:
                 rec_summary = rec_summary_match.group(1).strip()
             
-            # Extract caveats with better parsing
-            caveats_match = re.search(r'\*\*Caveats:\*\*\n(.*?)(?=Despite these caveats|$)', verdict_content, re.DOTALL)
+            # Extract caveats with robust parsing for multiple formats
+            caveats_match = re.search(r'\*\*Caveats:?\*\*\s*(.*?)(?=Despite these caveats|---|\n\*\*|$)', verdict_content, re.DOTALL)
             if caveats_match:
                 caveats_text = caveats_match.group(1).strip()
-                # Parse caveats by numbered list
-                caveat_lines = caveats_text.split('\n')
-                current_caveat = ""
                 
-                for line in caveat_lines:
-                    line = line.strip()
-                    if not line:
-                        if current_caveat:
-                            caveats.append(current_caveat.strip())
-                            current_caveat = ""
-                        continue
+                # Check if it's a structured list format (numbered or bulleted) or paragraph format
+                has_numbered_list = re.search(r'^\d+\.\s+\*\*', caveats_text, re.MULTILINE)
+                has_bullet_list = re.search(r'^\*\s+\*\*', caveats_text, re.MULTILINE)
+                
+                if has_numbered_list or has_bullet_list:
+                    # Structured list format (numbered or bulleted)
+                    caveat_lines = caveats_text.split('\n')
+                    current_caveat = ""
                     
-                    # Check if it's a new caveat (starts with number)
-                    if re.match(r'^\d+\.\s+\*\*', line):
-                        if current_caveat:
-                            caveats.append(current_caveat.strip())
-                        # Clean the line of formatting - remove number, bullets, and bold markdown
-                        current_caveat = re.sub(r'^\d+\.\s+\*\*([^*]+)\*\*:', r'\1', line).strip()
-                    else:
-                        current_caveat += " " + line
-                
-                if current_caveat:
-                    caveats.append(current_caveat.strip())
+                    for line in caveat_lines:
+                        line = line.strip()
+                        if not line:
+                            if current_caveat:
+                                caveats.append(current_caveat.strip())
+                                current_caveat = ""
+                            continue
+                        
+                        # Check if it's a new caveat (starts with number or bullet)
+                        if re.match(r'^(\d+\.\s+\*\*|\*\s+\*\*)', line):
+                            if current_caveat:
+                                caveats.append(current_caveat.strip())
+                            # Clean the line of formatting - remove number/bullet, and bold markdown
+                            current_caveat = re.sub(r'^(\d+\.\s+\*\*|\*\s+\*\*)([^*]+)\*\*:\s*', r'\2: ', line).strip()
+                        else:
+                            # Skip introductory sentences (like "While the outlook is positive...")
+                            if not current_caveat and not re.match(r'^(\d+\.\s+\*\*|\*\s+\*\*)', line):
+                                continue
+                            current_caveat += " " + line
+                    
+                    if current_caveat:
+                        caveats.append(current_caveat.strip())
+                        
+                else:
+                    # Paragraph format (like TANLA) - split by sentence-ending patterns
+                    # Look for sentences that end with periods followed by space and capital letter
+                    sentences = re.split(r'(?<=\.)\s+(?=[A-Z])', caveats_text)
+                    for sentence in sentences:
+                        sentence = sentence.strip()
+                        if sentence:
+                            caveats.append(sentence)
         
         # Extract generated timestamp
         generated_at = None
         timestamp_match = re.search(r'Analysis generated on (\d{4}-\d{2}-\d{2})', content)
         if timestamp_match:
             generated_at = timestamp_match.group(1)
-        
+
+        print(f"[THESIS PARSER] Successfully parsed thesis content with recommendation: {recommendation}")
+
         return {
             "executiveSummary": executive_summary,
             "recommendation": recommendation,
@@ -374,6 +404,7 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def log_requests(request, call_next):
+        print(f"[MIDDLEWARE] Incoming request: {request.method} {request.url.path}")
         try:
             print(f"[MCP][HTTP][REQ] {request.method} {request.url.path}")
         except Exception:
@@ -388,6 +419,7 @@ def create_app() -> FastAPI:
     # Basic startup/shutdown diagnostics
     @app.on_event("startup")
     async def on_startup():
+        print("[STARTUP] FastAPI app is starting up")
         print("[MCP][STARTUP] FastAPI app started.")
         print(f"[MCP][STARTUP] FRONTEND_ORIGIN={frontend_origin}")
         try:
@@ -402,6 +434,7 @@ def create_app() -> FastAPI:
 
     @app.get("/api/mcp/login")
     async def mcp_login():
+        print("[API] Handling /api/mcp/login request")
         try:
             print("[MCP][HTTP] GET /api/mcp/login - requesting login URL...")
             url = await mcp_manager.get_login_url()
@@ -413,6 +446,7 @@ def create_app() -> FastAPI:
 
     @app.get("/api/mcp/holdings", response_model=HoldingsResponse)
     async def mcp_holdings(refresh: bool = False):
+        print(f"[API] Handling /api/mcp/holdings request, refresh={refresh}")
         try:
             print(f"[MCP][HTTP] GET /api/mcp/holdings - refresh={refresh}")
 
@@ -507,6 +541,7 @@ def create_app() -> FastAPI:
         Fetch corporate events/announcements for a given symbol.
         filter_type: "30" for last 30 days, "all" for all available events
         """
+        print(f"[API] Handling /api/corporate-events/{symbol} request, filter={filter_type}")
         try:
             print(f"[API][HTTP] GET /api/corporate-events/{symbol} - filter={filter_type}")
             
@@ -536,13 +571,18 @@ def create_app() -> FastAPI:
         """
         Fetch investment thesis analysis for a given symbol
         """
+        print(f"[API] Handling /api/thesis/{symbol} request")
         try:
             print(f"[API][HTTP] GET /api/thesis/{symbol}")
             
             # Map symbol to company name
             company_names = {
                 "TINNARUBR": "Tinna Rubber & Infrastructure Ltd.",
-                "WONDERLA": "Wonderla Holidays Ltd."
+                "WONDERLA": "Wonderla Holidays Ltd.",
+                "TATAMOTORS": "Tata Motors Ltd.",
+                "TANLA": "Tanla Platforms Ltd.",
+                "STEELCAS": "Steelcast Ltd.",
+                "SARDAEN": "Sarda Energy & Minerals Ltd.",
             }
             
             company_name = company_names.get(symbol)

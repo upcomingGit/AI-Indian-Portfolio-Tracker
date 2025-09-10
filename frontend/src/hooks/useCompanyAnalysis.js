@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 
+// API base can be configured via Vite env VITE_BACKEND_URL, fallback to local backend
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_BACKEND_URL)
+  ? import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '')
+  : 'http://localhost:8000'
+
 // Simple in-memory cache (symbol -> { data, timestamp })
 const MEMORY_CACHE = new Map()
 const STALE_MS = 5 * 60 * 1000 // 5 minutes
@@ -25,7 +30,13 @@ export function useCompanyAnalysis(symbol) {
   const abortRef = useRef(null)
 
   useEffect(() => {
-    if (!symbol) return
+    if (!symbol) {
+      // Clear any previous state when no symbol is provided (prevents stale error on page reload)
+      setData(null)
+      setLoading(false)
+      setError(null)
+      return
+    }
     let cancelled = false
     const now = Date.now()
 
@@ -45,12 +56,14 @@ export function useCompanyAnalysis(symbol) {
       }
     }
 
-    abortRef.current?.abort()
+  // Clear previous error when starting a fresh fetch for this symbol
+  setError(null)
+  abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
     setLoading(prev => !data || prev)
 
-    fetch(`http://localhost:8000/api/thesis/${symbol}`, { signal: controller.signal })
+  fetch(`${API_BASE}/api/thesis/${symbol}`, { signal: controller.signal })
       .then(r => { if (!r.ok) throw new Error('Failed to fetch analysis'); return r.json() })
       .then(json => {
         if (cancelled) return

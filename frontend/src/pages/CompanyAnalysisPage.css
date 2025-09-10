@@ -47,7 +47,7 @@
    .recommendation-badge { display:inline-flex; align-items:center; gap:.55rem; padding:.55rem 1.05rem; border-radius:20px; font-weight:600; font-size:.82rem; margin-bottom:.85rem; background:#23233a; border:1px solid #3a3a52; color:#d5d7e4; letter-spacing:.4px; }
    .recommendation-badge.invest { background:linear-gradient(135deg,#00b894,#00d4aa); color:#f2fff9; border-color:#00e6b8; }
    .recommendation-badge.hold { background:linear-gradient(135deg,#ffb347,#ff8c00); color:#fff3da; border-color:#ff9f43; }
-   .recommendation-badge.avoid { background:linear-gradient(135deg,#ff6b6b,#ff4757); color:#ffe5e5; border-color:#ff8e8e; }
+   .recommendation-badge.conditional { background:linear-gradient(135deg,#f5b642,#ffb347); color:#fff3da; border-color:#ff9f43; }
    .recommendation-badge:hover { filter:brightness(1.08); }
    .section-title { font-size:1.25rem; font-weight:700; color:#f5f6fb; margin:0 0 1.4rem 0; padding-bottom:.65rem; border-bottom:2px solid #3a3a52; display:flex; align-items:center; gap:.6rem; position:relative; }
    .section-title::before { content:'📈'; font-size:1.35rem; opacity:.8; }
@@ -425,16 +425,83 @@
 @media (max-width: 768px) {
   .analysis-container {
     padding: 1rem;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    transform: none;
+    overflow-x: hidden;
   }
 
-  .quick-summary {
-    grid-template-columns: 1fr;
+  /* Ensure all major sections respect viewport width and wrap content */
+  .analysis-header,
+  .quick-summary,
+  .metrics-section,
+  .decision-section,
+  .caveats-section,
+  .pagination,
+  .analysis-metadata { 
+    max-width: 100%; 
+    width: 100%; 
+    box-sizing: border-box; 
+    overflow-x: hidden; 
+  }
+
+  /* Grid summary: allow cards to shrink gracefully */
+  .quick-summary { 
+    width: 100%;
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
   }
 
+  /* Card / item internals: allow wrapping of long text tokens instead of forcing horizontal growth */
+  .metric-item, .decision-item, .caveat-item, .summary-card, .recommendation-card { 
+    word-break: break-word; 
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+  
+  .metric-header, .decision-header { 
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .metric-score, .decision-score { 
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Decision & metrics list: prevent accidental side overflow due to negative shadows or borders */
+  .metrics-list, .decision-list { 
+    margin: 0; 
+    padding: 0; 
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Remove potential side effects from inner transforms causing fractional width overflow on some mobile browsers */
+  .metric-item:hover, .decision-item:hover, .caveat-item:hover { 
+    transform: translateY(-2px); 
+  }
+
+  /* Header adjustments */
+  .analysis-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .company-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Typography adjustments */
   .company-title {
     font-size: 1.5rem;
-    text-align: center;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .section-title {
@@ -442,12 +509,15 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .section-title::before {
     font-size: 1.2rem;
   }
 
+  /* Item adjustments */
   .metric-item, .decision-item, .caveat-item {
     padding: 1rem;
   }
@@ -460,6 +530,8 @@
 
   .metric-name, .decision-category {
     font-size: 1rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .metric-score, .decision-score {
@@ -467,6 +539,20 @@
     font-size: 0.8rem;
   }
 
+  /* Text content adjustments */
+  .metric-justification, .decision-justification {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  .summary-card p, .recommendation-card p {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  /* Pagination adjustments */
   .pagination {
     flex-direction: column;
     gap: 0.75rem;
@@ -478,14 +564,75 @@
     max-width: 200px;
   }
 
+  /* Error state adjustments */
   .error-state {
     padding: 2rem 1rem;
     margin: 1rem 0;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
+  /* Metadata adjustments */
   .analysis-metadata {
     padding: 1.5rem;
     margin: 2rem 0 1rem 0;
     font-size: 0.8rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Ultra-narrow phones (<= 480px) further tighten spacing */
+@media (max-width: 480px) {
+  .analysis-container { 
+    padding: 0.85rem 0.75rem 1.2rem;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    transform: none;
+    overflow-x: hidden;
+  }
+  
+  .section-title { 
+    font-size: 1.15rem !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  
+  .metric-item, .decision-item, .caveat-item { 
+    padding: 0.85rem 0.75rem 0.9rem;
+  }
+  
+  .metric-name, .decision-category { 
+    font-size: 0.92rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  
+  .metric-justification, .decision-justification, .caveat-item, .caveat-item p { 
+    font-size: 0.82rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+  
+  .recommendation-badge { 
+    font-size: 0.7rem !important; 
+    padding: 0.5rem 0.9rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  
+  .company-title {
+    font-size: 1.3rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  
+  .summary-card p, .recommendation-card p {
+    font-size: 0.85rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
 }

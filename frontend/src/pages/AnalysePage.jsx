@@ -11,11 +11,23 @@ export default function AnalysePage({ onBack, onCompanySelect, portfolioLoaded =
   const [newsLoading, setNewsLoading] = useState(false)
   const [newsError, setNewsError] = useState('')
   const [holdings, setHoldings] = useState([])
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 560)
 
   console.log('AnalysePage render:', { portfolioLoaded, hasPortfolioData: !!portfolioData, holdingsLength: holdings.length, tableHtml: !!tableHtml })
 
   // API base for news + sentiment
-  const API_BASE = 'https://api-indian-financial-markets-485071544262.asia-south1.run.app'
+  const API_BASE = import.meta.env.VITE_API_BASE
+
+  // Track viewport for responsive alternate layout (lightweight, throttled by resize events)
+  useEffect(() => {
+    const handler = () => {
+      // Avoid state churn if value unchanged
+      const mobile = window.innerWidth < 560
+      setIsMobile(prev => prev !== mobile ? mobile : prev)
+    }
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   // Load cached portfolio data on mount or when portfolio state changes
   useEffect(() => {
@@ -298,7 +310,10 @@ export default function AnalysePage({ onBack, onCompanySelect, portfolioLoaded =
   return (
   <div className="container analyse-page">
       <div className="analyse-header">
-        <h2 className="analyse-title">Analyse your portfolio</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <h2 className="analyse-title" style={{ margin: 0 }}>Analyse your portfolio</h2>
+          <span className="muted analyse-subtitle" style={{ fontSize: '1.1rem', marginTop: '2px' }}>NSE Code</span>
+        </div>
         <div className="analyse-actions">
           <button className="btn-primary" onClick={handleRefresh} disabled={loading}>
             {loading ? 'Loading…' : 'Refresh your Zerodha Portfolio'}
@@ -307,52 +322,84 @@ export default function AnalysePage({ onBack, onCompanySelect, portfolioLoaded =
         </div>
       </div>
   {holdings.length > 0 ? (
-        <div className="portfolio-table-full portfolio-card">
-          <table className="portfolio-table analyse-portfolio-table">
-            <thead>
-              <tr>
-                <th title="Trading symbol / Ticker">Symbol</th>
-                <th className="numeric" title="Last traded price">Price</th>
-                <th className="numeric" title="Total quantity held">Quantity</th>
-                <th className="numeric" title="T1 quantity (shares pending delivery)">T1 Qty</th>
-                <th className="numeric" title="Opening quantity for the day">Opening Qty</th>
-                <th className="numeric" title="Average buy price">Avg Price</th>
-                <th className="numeric" title="Previous close price">Prev Close</th>
-                <th className="numeric" title="Unrealized profit/loss">P&L</th>
-                <th className="numeric" title="Change since previous close">Day Change</th>
-                <th className="numeric" title="Percent change since previous close">Day Change %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {holdings.map((r, idx) => {
-                const pnlPos = Number(r.pnl) > 0
-                const pnlNeg = Number(r.pnl) < 0
-                const dcPos = Number(r.day_change) > 0
-                const dcNeg = Number(r.day_change) < 0
-                return (
-                  <tr 
-                    key={idx} 
-                    className="clickable-row"
-                    onClick={() => onCompanySelect && onCompanySelect(r.tradingsymbol)}
-                    style={{ cursor: 'pointer' }}
-                    title={`Click to view details for ${r.tradingsymbol}`}
-                  >
-                    <td>{r.tradingsymbol}</td>
-                    <td className="numeric">{fmtNum(r.price)}</td>
-                    <td className="numeric">{fmtNum(r.quantity, 0)}</td>
-                    <td className="numeric muted">{fmtNum(r.t1_quantity, 0)}</td>
-                    <td className="numeric muted">{fmtNum(r.opening_quantity, 0)}</td>
-                    <td className="numeric">{fmtNum(r.average_price)}</td>
-                    <td className="numeric">{fmtNum(r.close_price)}</td>
-                    <td className={`numeric pnl ${pnlPos ? 'positive' : ''} ${pnlNeg ? 'negative' : ''}`}>{fmtNum(r.pnl)}</td>
-                    <td className={`numeric ${dcPos ? 'positive' : ''} ${dcNeg ? 'negative' : ''}`}>{fmtNum(r.day_change)}</td>
-                    <td className={`numeric ${dcPos ? 'positive' : ''} ${dcNeg ? 'negative' : ''}`}>{fmtPct(r.day_change_percentage)}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        isMobile ? (
+          <div className="holdings-mobile-list">
+            {holdings.map((r, idx) => {
+              const pnlPos = Number(r.pnl) > 0
+              const pnlNeg = Number(r.pnl) < 0
+              const dcPos = Number(r.day_change) > 0
+              const dcNeg = Number(r.day_change) < 0
+              return (
+                <button
+                  key={idx}
+                  className={`holding-card ${pnlPos ? 'pnl-pos' : ''} ${pnlNeg ? 'pnl-neg' : ''}`}
+                  onClick={() => onCompanySelect && onCompanySelect(r.tradingsymbol)}
+                  title={`View details for ${r.tradingsymbol}`}
+                >
+                  <div className="holding-card-row top">
+                    <span className="symbol">{r.tradingsymbol}</span>
+                    <span className={`pnl ${pnlPos ? 'positive' : ''} ${pnlNeg ? 'negative' : ''}`}>{fmtNum(r.pnl)}</span>
+                  </div>
+                  <div className="holding-card-row metrics">
+                    <span><strong>{fmtNum(r.quantity,0)}</strong> QTY</span>
+                    <span>@ {fmtNum(r.average_price)}</span>
+                    <span>{fmtNum(r.price)}</span>
+                  </div>
+                  <div className="holding-card-row delta">
+                    <span className={`delta-val ${dcPos ? 'positive' : ''} ${dcNeg ? 'negative' : ''}`}>{fmtNum(r.day_change)} ({fmtPct(r.day_change_percentage)})</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="portfolio-table-full portfolio-card">
+            <table className="portfolio-table analyse-portfolio-table">
+              <thead>
+                <tr>
+                  <th title="Trading symbol / Ticker">Symbol</th>
+                  <th className="numeric" title="Last traded price">Price</th>
+                  <th className="numeric" title="Total quantity held">Quantity</th>
+                  <th className="numeric" title="T1 quantity (shares pending delivery)">T1 Qty</th>
+                  <th className="numeric" title="Opening quantity for the day">Opening Qty</th>
+                  <th className="numeric" title="Average buy price">Avg Price</th>
+                  <th className="numeric" title="Previous close price">Prev Close</th>
+                  <th className="numeric" title="Unrealized profit/loss">P&L</th>
+                  <th className="numeric" title="Change since previous close">Day Change</th>
+                  <th className="numeric" title="Percent change since previous close">Day Change %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {holdings.map((r, idx) => {
+                  const pnlPos = Number(r.pnl) > 0
+                  const pnlNeg = Number(r.pnl) < 0
+                  const dcPos = Number(r.day_change) > 0
+                  const dcNeg = Number(r.day_change) < 0
+                  return (
+                    <tr
+                      key={idx}
+                      className="clickable-row"
+                      onClick={() => onCompanySelect && onCompanySelect(r.tradingsymbol)}
+                      style={{ cursor: 'pointer' }}
+                      title={`Click to view details for ${r.tradingsymbol}`}
+                    >
+                      <td>{r.tradingsymbol}</td>
+                      <td className="numeric">{fmtNum(r.price)}</td>
+                      <td className="numeric">{fmtNum(r.quantity, 0)}</td>
+                      <td className="numeric muted">{fmtNum(r.t1_quantity, 0)}</td>
+                      <td className="numeric muted">{fmtNum(r.opening_quantity, 0)}</td>
+                      <td className="numeric">{fmtNum(r.average_price)}</td>
+                      <td className="numeric">{fmtNum(r.close_price)}</td>
+                      <td className={`numeric pnl ${pnlPos ? 'positive' : ''} ${pnlNeg ? 'negative' : ''}`}>{fmtNum(r.pnl)}</td>
+                      <td className={`numeric ${dcPos ? 'positive' : ''} ${dcNeg ? 'negative' : ''}`}>{fmtNum(r.day_change)}</td>
+                      <td className={`numeric ${dcPos ? 'positive' : ''} ${dcNeg ? 'negative' : ''}`}>{fmtPct(r.day_change_percentage)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : (
         <div className="portfolio-table-full portfolio-card" dangerouslySetInnerHTML={{ __html: tableHtml }} />
       )}

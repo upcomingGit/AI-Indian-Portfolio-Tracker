@@ -4,7 +4,11 @@ import './ResearchPage.css'
 // List of available companies based on thesis files
 const AVAILABLE_COMPANIES = [
   { symbol: 'TINNARUBR', name: 'Tinna Rubber & Infrastructure Ltd.' },
-  { symbol: 'WONDERLA', name: 'Wonderla Holidays Ltd.' }
+  { symbol: 'WONDERLA', name: 'Wonderla Holidays Ltd.' },
+  { symbol: 'TATAMOTORS', name: 'Tata Motors Ltd.' },
+  { symbol: 'TANLA', name: 'Tanla Platforms Ltd.' },
+  { symbol: 'STEELCAS', name: 'Steelcast Ltd.' },
+  { symbol: 'SARDAEN', name: 'Sarda Energy & Minerals Ltd.' }
 ]
 
 export default function ResearchPage({ onBack, onCompanySelect }) {

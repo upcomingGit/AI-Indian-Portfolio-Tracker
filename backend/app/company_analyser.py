@@ -83,7 +83,7 @@ def fetch_financial_data(symbol, api_base_url=None):
         dict or None: Financial data JSON or None if failed
     """
     # Try standalone first, then consolidated
-    financial_types = ['standalone', 'consolidated']
+    financial_types = ['consolidated', 'standalone']
 
     if not api_base_url:
         api_base_url = API_BASE_URL
