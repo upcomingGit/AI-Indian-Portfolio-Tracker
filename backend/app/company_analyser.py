@@ -13,6 +13,7 @@ import pandas as pd
 from datetime import datetime
 import requests
 import json
+import re
 from dotenv import load_dotenv
 
 
@@ -46,8 +47,47 @@ def fetch_historical_prices(symbol):
     # Try NSE first, then BSE
     exchanges = ['.NS', '.BO']
     
+    def lookup_scrip(scrip):
+        """Return scrip name if scrip is a BSE scrip code, or scrip code if name is given. Also parses and returns the BSE code if found."""
+        API_URL_LOOKUP = "https://api.bseindia.com/BseIndiaAPI/api/PeerSmartSearch/w"
+        params = {"Type": "SS", "text": scrip}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Accept": "application/json, text/plain, */*",
+            "Origin": "https://www.bseindia.com/",
+            "Referer": "https://www.bseindia.com/",
+            "Connection": "keep-alive",
+        }
+        response = requests.get(API_URL_LOOKUP, params=params, headers=headers, timeout=10)
+        print(f"Raw Response: {response.json()}")
+        response.raise_for_status()
+        html = response.text.replace("&nbsp;", " ")
+        
+        # Extract the BSE code (last number in the <li> element)
+        bse_code_match = re.search(r"liclick\('([0-9]+)'", html)
+        print(f"BSE Code Regex Match: {bse_code_match}")
+        bse_code = bse_code_match.group(1) if bse_code_match else None
+        
+        # Extract the short symbol (FLUIDOM) from the span
+        symbol_match = re.search(r"<span>([A-Z]+)", html)
+        print(f"Symbol Regex Match: {symbol_match}")
+        symbol = symbol_match.group(1) if symbol_match else None
+        
+        return {"html": html, "bse_code": bse_code, "symbol": symbol}
+    
     for exchange in exchanges:
-        full_symbol = symbol + exchange
+        if exchange == '.BO':
+            try:
+                lookup_result = lookup_scrip(symbol)
+                if lookup_result and lookup_result.get('symbol'):
+                    full_symbol = lookup_result['symbol'] + exchange
+                else:
+                    full_symbol = symbol + exchange
+            except Exception as e:
+                print(f"Error looking up BSE scrip for {symbol}: {e}")
+                full_symbol = symbol + exchange
+        else:
+            full_symbol = symbol + exchange
         print(f"Trying to fetch data for {full_symbol}...")
         
         try:
@@ -71,7 +111,7 @@ def fetch_historical_prices(symbol):
     return None
 
 
-def fetch_financial_data(symbol, api_base_url=None):
+def fetch_financial_data(symbol, api_base_url=None, prefer_standalone=None):
     """
     Fetch financial statement data from the API (consolidated first, then standalone)
     
@@ -82,8 +122,12 @@ def fetch_financial_data(symbol, api_base_url=None):
     Returns:
         dict or None: Financial data JSON or None if failed
     """
-    # Try standalone first, then consolidated
-    financial_types = ['consolidated', 'standalone']
+    # Determine order based on preference: if prefer_standalone is True try standalone first,
+    # if False try consolidated first, if None default to consolidated-first as existing behaviour.
+    if prefer_standalone is True:
+        financial_types = ['standalone', 'consolidated']
+    else:
+        financial_types = ['consolidated', 'standalone']
 
     if not api_base_url:
         api_base_url = API_BASE_URL
@@ -442,71 +486,99 @@ def analyze_company_comprehensive(client, markdown_content, financial_analysis, 
 
 def main():
     """Main function to orchestrate the analysis"""
-    parser = argparse.ArgumentParser(description='Analyze Indian company markdown files using Google Gemini and historical price data')
-    parser.add_argument('security_symbol', help='NSE/BSE security symbol (e.g., RELIANCE, TCS) - script will search Company_KB_Articles for the markdown')
+    parser = argparse.ArgumentParser(description='Analyze one or more Indian company symbols using Google Gemini and historical price data')
+    parser.add_argument('security_symbols', nargs='+', help='One or more NSE/BSE security symbols (e.g., RELIANCE TCS) - script will search Company_KB_Articles for each markdown')
     args = parser.parse_args()
 
-    # Always search KB articles for the company markdown based on the provided symbol
-    print(f"Searching KB for symbol {args.security_symbol} in Company_KB_Articles...")
-    kb_file = find_company_kb_file(args.security_symbol)
-    if not kb_file:
-        print("No KB markdown found for the provided symbol. Please add the file to Company_KB_Articles or provide a markdown file manually.")
-        sys.exit(1)
+    # Process each provided symbol separately
+    for sym in args.security_symbols:
+        symbol = sym.strip()
+        if not symbol:
+            continue
 
-    print(f"Found KB markdown: {kb_file}")
-    markdown_content = read_markdown_file(kb_file)
-    print(f"Read {len(markdown_content)} characters from markdown file.")
+        print(f"\n---\nProcessing symbol: {symbol}")
 
-    print(f"Fetching 10-year historical prices for {args.security_symbol}...")
-    price_data = fetch_historical_prices(args.security_symbol)
-    
-    if price_data is not None:
-        print(f"Successfully fetched {len(price_data)} monthly price records")
-        print(f"Price range: ₹{price_data['Close'].min():.2f} - ₹{price_data['Close'].max():.2f}")
-    else:
-        print("Warning: Could not fetch historical price data. Analysis will proceed with markdown content only.")
-    
-    print(f"Fetching financial statement data for {args.security_symbol}...")
-    financial_data = fetch_financial_data(args.security_symbol)
-    
-    if financial_data is not None:
-        print(f"Successfully fetched {financial_data.get('financial_type', 'unknown')} financial statements")
-        financials = financial_data.get('financials', {})
-        print(f"Available statements: {list(financials.keys())}")
-    else:
-        print("Warning: Could not fetch financial statement data. Analysis will proceed without financial statements.")
+        # Ask user whether standalone financial statements are required. Default to consolidated if no answer.
+        prefer_standalone = None
+        try:
+            # Use input with a short prompt. If user just presses Enter, assume consolidated (prefer_standalone=False)
+            resp = input(f"Do you want to prefer standalone financial statements for {symbol}? (y/N) ").strip().lower()
+            if resp in ('y', 'yes'):
+                prefer_standalone = True
+            elif resp in ('n', 'no', ''):
+                prefer_standalone = False
+            else:
+                # Unrecognized answer, default to consolidated
+                prefer_standalone = False
+        except Exception:
+            # Non-interactive environment: default to consolidated
+            prefer_standalone = False
 
-    print("Configuring Gemini client...")
-    client = configure_gemini_client()
+        # Always search KB articles for the company markdown based on the provided symbol
+        print(f"Searching KB for symbol {symbol} in Company_KB_Articles...")
+        kb_file = find_company_kb_file(symbol)
+        if not kb_file:
+            print(f"No KB markdown found for {symbol}. Skipping this symbol and continuing.")
+            continue
 
-    print("Starting two-stage analysis with Gemini...")
-    
-    # Stage 1: Deep financial analysis of raw data
-    financial_analysis = analyze_financials_with_gemini(client, price_data, financial_data)
+        print(f"Found KB markdown: {kb_file}")
+        markdown_content = read_markdown_file(kb_file)
+        print(f"Read {len(markdown_content)} characters from markdown file.")
 
-    #print(f"This is the financial analysis output:\n{financial_analysis}\n")
+        print(f"Fetching 10-year historical prices for {symbol}...")
+        price_data = fetch_historical_prices(symbol)
 
-    # Stage 2: Comprehensive analysis incorporating business context
-    final_analysis = analyze_company_comprehensive(client, markdown_content, financial_analysis, price_data, financial_data)
+        if price_data is not None:
+            print(f"Successfully fetched {len(price_data)} monthly price records")
+            try:
+                print(f"Price range: ₹{price_data['Close'].min():.2f} - ₹{price_data['Close'].max():.2f}")
+            except Exception:
+                pass
+        else:
+            print("Warning: Could not fetch historical price data. Analysis will proceed with markdown content only.")
 
-    # Output results
-    output_file = f"{args.security_symbol}_Thesis.md"
-    # Ensure markdown extension
-    if not output_file.lower().endswith('.md'):
-        output_file = output_file + '.md'
+        print(f"Fetching financial statement data for {symbol} (preference standalone={prefer_standalone})...")
+        financial_data = fetch_financial_data(symbol, prefer_standalone=prefer_standalone)
 
-    # Create comprehensive output with both stages and write to disk
-    comprehensive_output = f"""# {args.security_symbol} Investment Thesis
-    ## Executive Summary
-    {final_analysis}
+        if financial_data is not None:
+            print(f"Successfully fetched {financial_data.get('financial_type', 'unknown')} financial statements")
+            financials = financial_data.get('financials', {})
+            print(f"Available statements: {list(financials.keys())}")
+        else:
+            print("Warning: Could not fetch financial statement data. Analysis will proceed without financial statements.")
 
-    ---
-    *Analysis generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} using two-stage Gemini analysis*
-    """
+        print("Configuring Gemini client...")
+        client = configure_gemini_client()
 
-    with open(output_file, 'w', encoding='utf-8') as file:
-        file.write(comprehensive_output)
-    print(f"Two-stage analysis saved to: {output_file}")
+        print("Starting two-stage analysis with Gemini...")
+
+        # Stage 1: Deep financial analysis of raw data
+        financial_analysis = analyze_financials_with_gemini(client, price_data, financial_data)
+
+        # Stage 2: Comprehensive analysis incorporating business context
+        final_analysis = analyze_company_comprehensive(client, markdown_content, financial_analysis, price_data, financial_data)
+
+        # Output results per symbol
+        # Sanitize symbol for filename
+        out_sym = symbol.replace('/', '_')
+        output_file = f"{out_sym}_Thesis.md"
+        if not output_file.lower().endswith('.md'):
+            output_file = output_file + '.md'
+
+        comprehensive_output = f"""# {symbol} Investment Thesis
+## Executive Summary
+{final_analysis}
+
+---
+*Analysis generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} using two-stage Gemini analysis*
+"""
+
+        try:
+            with open(output_file, 'w', encoding='utf-8') as file:
+                file.write(comprehensive_output)
+            print(f"Two-stage analysis saved to: {output_file}")
+        except Exception as e:
+            print(f"Error writing output file {output_file}: {e}")
 
 
 if __name__ == "__main__":

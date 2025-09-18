@@ -21,6 +21,38 @@ BSE_ORIGIN = os.getenv("BSE_ORIGIN", "https://www.bseindia.com/")
 BSE_REFERER = os.getenv("BSE_REFERER", "https://www.bseindia.com/")
 
 
+def load_companies() -> List[Dict[str, str]]:
+    """
+    Load companies from JSON file, with fallback to hardcoded list
+    """
+    try:
+        companies_file = os.path.join(os.path.dirname(__file__), "companies.json")
+        if os.path.exists(companies_file):
+            import json
+            with open(companies_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"[COMPANIES] Error loading from JSON file: {e}")
+    
+    # Fallback to hardcoded list
+    return [
+        {"symbol": "TINNARUBR", "name": "Tinna Rubber & Infrastructure Ltd."},
+        {"symbol": "WONDERLA", "name": "Wonderla Holidays Ltd."},
+        {"symbol": "TATAMOTORS", "name": "Tata Motors Ltd."},
+        {"symbol": "KOTHARIPET", "name": "Kothari Petrochemicals Ltd."},
+    ]
+
+def get_company_name(symbol: str) -> Optional[str]:
+    """
+    Get company name for a given symbol
+    """
+    companies = load_companies()
+    for company in companies:
+        if company["symbol"] == symbol:
+            return company["name"]
+    return None
+
+
 class HoldingsResponse(BaseModel):
     holdings: List[Dict[str, Any]]
 
@@ -396,7 +428,7 @@ def create_app() -> FastAPI:
     frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[frontend_origin, "*"],  # allow all for dev simplicity
+        allow_origins=[frontend_origin, "http://localhost:5173", "*"],  # allow all for dev simplicity
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -575,17 +607,8 @@ def create_app() -> FastAPI:
         try:
             print(f"[API][HTTP] GET /api/thesis/{symbol}")
             
-            # Map symbol to company name
-            company_names = {
-                "TINNARUBR": "Tinna Rubber & Infrastructure Ltd.",
-                "WONDERLA": "Wonderla Holidays Ltd.",
-                "TATAMOTORS": "Tata Motors Ltd.",
-                "TANLA": "Tanla Platforms Ltd.",
-                "STEELCAS": "Steelcast Ltd.",
-                "SARDAEN": "Sarda Energy & Minerals Ltd.",
-            }
-            
-            company_name = company_names.get(symbol)
+            # Get company name from unified source
+            company_name = get_company_name(symbol)
             if not company_name:
                 raise HTTPException(status_code=404, detail=f"No analysis available for {symbol}")
             
@@ -612,6 +635,76 @@ def create_app() -> FastAPI:
             raise
         except Exception as e:
             print(f"[API][HTTP][ERROR] /api/thesis/{symbol} failed: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # News API endpoints - proxy to external API
+    @app.get("/companies/{symbol}/news/last-1-day/")
+    async def get_company_news_1_day(symbol: str):
+        """Proxy to external news API for 1-day news"""
+        try:
+            external_url = f"https://api-indian-financial-markets-485071544262.asia-south1.run.app/companies/{symbol}/news/last-1-day/"
+            print(f"[API][HTTP] GET /companies/{symbol}/news/last-1-day/ -> proxying to {external_url}")
+            
+            response = requests.get(external_url, timeout=30)
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="No news found for this company")
+            response.raise_for_status()
+            
+            return response.json()
+        except requests.RequestException as e:
+            print(f"[API][HTTP][ERROR] News API proxy failed: {e}")
+            raise HTTPException(status_code=500, detail="Failed to fetch news data")
+
+    @app.get("/companies/{symbol}/news/last-7-days/")
+    async def get_company_news_7_days(symbol: str):
+        """Proxy to external news API for 7-day news"""
+        try:
+            external_url = f"https://api-indian-financial-markets-485071544262.asia-south1.run.app/companies/{symbol}/news/last-7-days/"
+            print(f"[API][HTTP] GET /companies/{symbol}/news/last-7-days/ -> proxying to {external_url}")
+            
+            response = requests.get(external_url, timeout=30)
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="No news found for this company")
+            response.raise_for_status()
+            
+            return response.json()
+        except requests.RequestException as e:
+            print(f"[API][HTTP][ERROR] News API proxy failed: {e}")
+            raise HTTPException(status_code=500, detail="Failed to fetch news data")
+
+    @app.get("/companies/{symbol}/news/last-30-days/")
+    async def get_company_news_30_days(symbol: str):
+        """Proxy to external news API for 30-day news"""
+        try:
+            external_url = f"https://api-indian-financial-markets-485071544262.asia-south1.run.app/companies/{symbol}/news/last-30-days/"
+            print(f"[API][HTTP] GET /companies/{symbol}/news/last-30-days/ -> proxying to {external_url}")
+            
+            response = requests.get(external_url, timeout=30)
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="No news found for this company")
+            response.raise_for_status()
+            
+            return response.json()
+        except requests.RequestException as e:
+            print(f"[API][HTTP][ERROR] News API proxy failed: {e}")
+            raise HTTPException(status_code=500, detail="Failed to fetch news data")
+
+    @app.get("/api/companies")
+    async def get_companies():
+        """
+        Fetch list of all available companies for research
+        """
+        print("[API] Handling /api/companies request")
+        try:
+            print("[API][HTTP] GET /api/companies")
+            
+            companies = load_companies()
+            
+            print(f"[API][HTTP] GET /api/companies - returning {len(companies)} companies")
+            return {"companies": companies}
+            
+        except Exception as e:
+            print(f"[API][HTTP][ERROR] /api/companies failed: {e}")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.on_event("shutdown")

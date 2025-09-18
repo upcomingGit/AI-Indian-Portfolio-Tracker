@@ -61,8 +61,15 @@ body {
 @media (max-width: 900px) {
   .container.analyse-page { width: 95vw; }
 }
-.site-header { position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, rgba(139,92,246,0.15), rgba(11,11,18,0.95)); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); padding: 0.9rem 0; }
+.site-header { position: relative; top: 0; z-index: 10; background: linear-gradient(180deg, rgba(139,92,246,0.15), rgba(11,11,18,0.95)); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); padding: 0.9rem 0; }
 .brand { display: block; width: 100%; text-align: center; margin: 0; font-weight: 800; letter-spacing: 0.3px; color: var(--text-0); font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; font-size: 1.9rem; }
+
+/* Make brand slightly smaller on small screens */
+@media (max-width: 480px) {
+  .brand {
+    font-size: 1.35rem; /* reduced from 1.9rem */
+  }
+}
 .site-main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding-bottom: 3.5rem; box-sizing: border-box; background: inherit; }
 .hero { text-align: center; padding: 12.4rem 1rem 3.5rem; }
 .hero-title { font-size: 4rem; line-height: 1.05; margin: 0 0 0.5rem; font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial; font-weight: 700; letter-spacing: -0.5px; /* gradient text */ background: linear-gradient(90deg, var(--purple-400), var(--blue-600)); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 6px 20px rgba(17,12,34,0.45); }

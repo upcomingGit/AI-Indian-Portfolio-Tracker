@@ -192,7 +192,7 @@ export default function AnalysePage({ onBack, onCompanySelect, portfolioLoaded =
       
       // Step 1: ask backend for MCP login URL
       try {
-        const loginRes = await fetch('/api/mcp/login')
+        const loginRes = await fetch(`${import.meta.env.VITE_API_BASE}/api/mcp/login`)
         if (loginRes.ok) {
           const { login_url } = await loginRes.json()
           if (login_url) {
@@ -210,7 +210,7 @@ export default function AnalysePage({ onBack, onCompanySelect, portfolioLoaded =
       while (attempts < 5) {
         attempts += 1
         try {
-          const hRes = await fetch('/api/mcp/holdings?refresh=true') // force fresh on explicit connect/refresh
+          const hRes = await fetch(`${import.meta.env.VITE_API_BASE}/api/mcp/holdings?refresh=true`) // force fresh on explicit connect/refresh
           if (hRes.ok) {
             const data = await hRes.json()
             holdings = Array.isArray(data?.holdings) ? data.holdings : []

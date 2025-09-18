@@ -112,7 +112,7 @@ function App() {
       {/* Header */}
       <header className="site-header">
         <div className="container">
-          <div className="brand">InvestR - Your AI-Powered Portfolio Tracker</div>
+          <div className="brand">InvestR - Your AI-Powered Investment Memo Generator</div>
         </div>
       </header>
 

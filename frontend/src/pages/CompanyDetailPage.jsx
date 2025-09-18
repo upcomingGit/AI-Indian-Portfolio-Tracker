@@ -18,7 +18,7 @@ export default function CompanyDetailPage({ symbol, onBack }) {
   const [knowledgeBaseData, setKnowledgeBaseData] = useState('')
   const [knowledgeBaseLoading, setKnowledgeBaseLoading] = useState(false)
 
-  const API_BASE = 'https://api-indian-financial-markets-485071544262.asia-south1.run.app'
+  const API_BASE = import.meta.env.VITE_API_BASE
 
   // Formatting helpers
   const fmtNum = (n, digits = 2) => {
@@ -55,7 +55,7 @@ export default function CompanyDetailPage({ symbol, onBack }) {
     try {
       setLoading(true)
       // Try to get holdings data from the backend first
-      const holdingsRes = await fetch('/api/mcp/holdings')
+      const holdingsRes = await fetch(`${import.meta.env.VITE_API_BASE}/api/mcp/holdings`)
       if (holdingsRes.ok) {
         const holdingsData = await holdingsRes.json()
         const holdings = Array.isArray(holdingsData?.holdings) ? holdingsData.holdings : []
@@ -177,7 +177,7 @@ export default function CompanyDetailPage({ symbol, onBack }) {
       
       // Call the backend API for corporate events
       const filterParam = filter === 'all' ? 'all' : String(filter)
-      const url = `/api/corporate-events/${encodeURIComponent(symbol)}?filter_type=${filterParam}`
+      const url = `${import.meta.env.VITE_API_BASE}/api/corporate-events/${encodeURIComponent(symbol)}?filter_type=${filterParam}`
       console.log('[Corporate Events API] GET', url)
       
       const res = await fetch(url)
