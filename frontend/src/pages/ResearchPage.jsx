@@ -1,15 +1,45 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import './ResearchPage.css'
 
-// Load companies from external JSON so the list can scale independently
-// import COMPANIES from '../data/companies.json'
+const CACHE_KEY = 'research_companies_cache'
+const CACHE_TIMESTAMP_KEY = 'research_companies_cache_timestamp'
+const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
+
+// Load cached companies from localStorage if available and not stale
+function loadCachedCompanies() {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY)
+    const timestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY)
+    
+    if (cached && timestamp) {
+      const age = Date.now() - parseInt(timestamp, 10)
+      if (age < CACHE_DURATION) {
+        return JSON.parse(cached)
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load cached companies:', err)
+  }
+  return []
+}
+
+// Save companies to localStorage
+function cacheCompanies(companies) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(companies))
+    localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString())
+  } catch (err) {
+    console.warn('Failed to cache companies:', err)
+  }
+}
 
 export default function ResearchPage({ onBack, onCompanySelect }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
   const [showPillsDropdown, setShowPillsDropdown] = useState(false)
-  const [companies, setCompanies] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [companies, setCompanies] = useState(() => loadCachedCompanies())
+  const [loading, setLoading] = useState(() => loadCachedCompanies().length === 0)
+  const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState(null)
   const searchInputRef = useRef(null)
   const dropdownRef = useRef(null)
@@ -19,22 +49,36 @@ export default function ResearchPage({ onBack, onCompanySelect }) {
   // Fetch companies from backend on component mount
   useEffect(() => {
     const fetchCompanies = async () => {
+      const cachedCompanies = loadCachedCompanies()
+      
       try {
-        setLoading(true)
+        if (cachedCompanies.length === 0) {
+          setLoading(true)
+        } else {
+          setSyncing(true)
+        }
         setError(null)
         const response = await fetch(`${import.meta.env.VITE_API_BASE}/api/companies`)
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
         const data = await response.json()
-        setCompanies(data.companies || [])
+        const remoteCompanies = Array.isArray(data?.companies) ? data.companies : []
+        if (remoteCompanies.length > 0) {
+          setCompanies(remoteCompanies)
+          cacheCompanies(remoteCompanies)
+        }
       } catch (err) {
         console.error('Failed to fetch companies:', err)
-        setError('Failed to load companies. Please try again.')
-        // Fallback to empty array
-        setCompanies([])
+        setError(cachedCompanies.length > 0
+          ? 'Failed to refresh companies. Showing cached list.'
+          : 'Failed to load companies. Please try again.')
+        if (cachedCompanies.length === 0) {
+          setCompanies([])
+        }
       } finally {
         setLoading(false)
+        setSyncing(false)
       }
     }
 
@@ -145,7 +189,7 @@ export default function ResearchPage({ onBack, onCompanySelect }) {
                 className="search-input"
                 aria-expanded={showDropdown}
                 aria-controls="research-search-dropdown"
-                disabled={loading}
+                disabled={loading && companies.length === 0}
               />
 
               {/* Search icon */}
@@ -157,14 +201,26 @@ export default function ResearchPage({ onBack, onCompanySelect }) {
               </div>
 
               {/* Loading indicator */}
-              {loading && (
+              {loading && companies.length === 0 && (
                 <div className="search-loading">
                   <div className="loading-spinner"></div>
                 </div>
               )}
 
+              {syncing && companies.length > 0 && (
+                <div className="search-status" aria-live="polite">
+                  Refreshing latest list…
+                </div>
+              )}
+
+              {error && companies.length > 0 && (
+                <div className="search-status" role="status">
+                  {error}
+                </div>
+              )}
+
               {/* Error message */}
-              {error && !loading && (
+              {error && !loading && companies.length === 0 && (
                 <div className="search-error">
                   <span>{error}</span>
                   <button 
@@ -213,7 +269,7 @@ export default function ResearchPage({ onBack, onCompanySelect }) {
                 onClick={togglePillsDropdown}
                 aria-expanded={showPillsDropdown}
                 aria-controls="pills-dropdown"
-                disabled={loading}
+                disabled={loading && companies.length === 0}
               >
                 {loading ? 'Loading Companies...' : showPillsDropdown ? 'Hide Companies' : 'Browse All Companies'}
                 {!loading && (
@@ -247,7 +303,7 @@ export default function ResearchPage({ onBack, onCompanySelect }) {
                 </div>
               )}
 
-              {error && !loading && (
+              {error && !loading && companies.length === 0 && (
                 <div className="pills-error">
                   <span>{error}</span>
                   <button 

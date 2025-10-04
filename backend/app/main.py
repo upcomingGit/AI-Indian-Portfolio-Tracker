@@ -689,6 +689,40 @@ def create_app() -> FastAPI:
             print(f"[API][HTTP][ERROR] News API proxy failed: {e}")
             raise HTTPException(status_code=500, detail="Failed to fetch news data")
 
+    @app.get("/companies/{company_id}/conference-calls/details/")
+    async def get_conference_call_details(company_id: str):
+        """Proxy to external API for conference call fiscal year/quarter details"""
+        try:
+            external_url = f"https://api-indian-financial-markets-485071544262.asia-south1.run.app/companies/{company_id}/conference-calls/details/"
+            print(f"[API][HTTP] GET /companies/{company_id}/conference-calls/details/ -> proxying to {external_url}")
+            
+            response = requests.get(external_url, timeout=30)
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="No conference calls found for this company")
+            response.raise_for_status()
+            
+            return response.json()
+        except requests.RequestException as e:
+            print(f"[API][HTTP][ERROR] Conference calls details API proxy failed: {e}")
+            raise HTTPException(status_code=500, detail="Failed to fetch conference call details")
+
+    @app.get("/companies/{company_id}/conference-calls/{fiscal_year}/{fiscal_quarter}/summary/")
+    async def get_conference_call_summary(company_id: str, fiscal_year: int, fiscal_quarter: int):
+        """Proxy to external API for conference call summary"""
+        try:
+            external_url = f"https://api-indian-financial-markets-485071544262.asia-south1.run.app/companies/{company_id}/conference-calls/{fiscal_year}/{fiscal_quarter}/summary/"
+            print(f"[API][HTTP] GET /companies/{company_id}/conference-calls/{fiscal_year}/{fiscal_quarter}/summary/ -> proxying to {external_url}")
+            
+            response = requests.get(external_url, timeout=30)
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="No summary found for this conference call")
+            response.raise_for_status()
+            
+            return response.json()
+        except requests.RequestException as e:
+            print(f"[API][HTTP][ERROR] Conference call summary API proxy failed: {e}")
+            raise HTTPException(status_code=500, detail="Failed to fetch conference call summary")
+
     @app.get("/api/companies")
     async def get_companies():
         """
