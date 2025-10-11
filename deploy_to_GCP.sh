@@ -133,7 +133,7 @@ deploy_frontend() {
 	# Deploy from the repository root so firebase.json is picked up correctly
 	log "Deploying frontend to Firebase Hosting..."
 	pushd "$FRONTEND_DIR" >/dev/null
-	firebase deploy --only hosting:ai-indian-portfolio-analyst
+	firebase deploy --only hosting
 	popd >/dev/null
 	log "Frontend deployment completed."
 }
